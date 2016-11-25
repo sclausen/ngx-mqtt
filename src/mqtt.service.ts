@@ -29,9 +29,9 @@ export class MqttService {
   public messages: Subject<MQTT.Packet> = new Subject<MQTT.Packet>();
 
   constructor(options: MqttServiceOptions) {
-    const protocol = options.port === 443 ? 'wss' : 'ws';
     const hostname = options.hostname || 'localhost';
     const port = options.port || 443;
+    const protocol = options.protocol || 'ws';
     const path = options.path || 'mqtt';
     this.url = `${protocol}://${hostname}:${port}/{$path}`;
     this.client = MQTT.connect(this.url, {

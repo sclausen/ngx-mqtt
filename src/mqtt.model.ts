@@ -3,6 +3,7 @@ import { Packet } from 'mqtt';
 export interface MqttServiceOptions {
   hostname?: string;
   port?: number;
+  protocol?: string;
   path?: string;
 }
 
