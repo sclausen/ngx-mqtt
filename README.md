@@ -17,6 +17,10 @@ npm install angular2-mqtt --save
 
 ## Usage
 How to use this module, see `demo.module.ts` and `index.html`.
+To see the demo in action use
+```sh
+npm install && npm run start
+```
 
 ## Test
 
