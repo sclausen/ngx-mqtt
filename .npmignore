@@ -1,0 +1,17 @@
+config
+coverage
+node_modules
+demo.module.ts
+index.html
+tests
+*.ts
+!*.d.ts
+mqtt.d.ts
+*.metadata.json
+make.js
+clean.js
+Makefile
+karma.conf.js
+tsconfig.json
+tslint.json
+webpack.config.js

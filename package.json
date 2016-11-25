@@ -1,0 +1,70 @@
+{
+  "name": "angular2-mqtt",
+  "version": "1.0.0",
+  "description": "angular2 mqtt client library",
+  "main": "bundles/angular2-mqtt.min.js",
+  "module": "index.js",
+  "typings": "./index.d.ts",
+  "scripts": {
+    "start": "http-server",
+    "clean": "node clean",
+    "test": "karma start",
+    "prepublish": "node clean && ngc && webpack"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sclausen/angular2-mqtt.git"
+  },
+  "keywords": [
+    "angular",
+    "angular2",
+    "mqtt"
+  ],
+  "author": {
+    "name": "sclausen"
+  },
+  "contributors": [
+    {
+      "name": "lpeterse"
+    }
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@angular/core": "2.2.3",
+    "@types/mqtt": "0.0.32",
+    "mqtt": "2.1.3",
+    "rxjs": "5.0.0-beta.12"
+  },
+  "devDependencies": {
+    "@angular/common": "2.2.3",
+    "@angular/compiler-cli": "2.2.3",
+    "@angular/compiler": "2.2.3",
+    "@angular/platform-browser-dynamic": "2.2.3",
+    "@angular/platform-browser": "2.2.3",
+    "@types/hammerjs": "2.0.33",
+    "@types/jasmine": "2.5.35",
+    "@types/node": "6.0.45",
+    "awesome-typescript-loader": "2.2.4",
+    "core-js": "2.4.1",
+    "istanbul-instrumenter-loader": "0.2.0",
+    "jasmine-core": "2.5.2",
+    "karma": "^1.3.0",
+    "karma-chrome-launcher": "2.0.0",
+    "karma-coverage": "1.1.1",
+    "karma-jasmine": "1.0.2",
+    "karma-mocha-reporter": "^2.1.0",
+    "karma-sourcemap-loader": "^0.3.7",
+    "karma-webpack": "^1.8.0",
+    "reflect-metadata": "0.1.8",
+    "rimraf": "^2.5.4",
+    "source-map-loader": "0.1.5",
+    "systemjs": "0.19.40",
+    "systemjs-builder": "0.15.33",
+    "ts-helpers": "1.1.2",
+    "tslint": "3.15.1",
+    "tslint-loader": "2.1.5",
+    "typescript": "2.0.6",
+    "webpack": "2.1.0-beta.25",
+    "zone.js": "0.6.26"
+  }
+}
