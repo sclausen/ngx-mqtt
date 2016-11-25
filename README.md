@@ -24,12 +24,3 @@ How to use this module, see `demo.module.ts` and `index.html`.
 ```
 $ npm test
 ```
-
-## Upgrade MQTT.js Version
-
-To use a different version of MQTT.js, install the desired version of MQTT.js with `npm install mqtt@x.y.z` and browserify with `npm run browserify-mqtt`. Now you can build `angular2-mqtt` with `npm install`.
-
-
-
-## Notes
-This library uses MQTT.js `mqtt@2.1.3`.
