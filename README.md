@@ -6,7 +6,6 @@ It uses observables and takes care of subscription handling and message routing.
 * [Installation](#installation)
 * [Usage](#usage)
 * [Test](#test)
-* [Notes](#notes)
 
 ## Installation
 
