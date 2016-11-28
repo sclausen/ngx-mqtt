@@ -33,7 +33,7 @@ export class MqttService {
     const port = options.port || 443;
     const protocol = options.protocol || 'ws';
     const path = options.path || 'mqtt';
-    this.url = `${protocol}://${hostname}:${port}/{$path}`;
+    this.url = `${protocol}://${hostname}:${port}/${path}`;
     this.client = MQTT.connect(this.url, {
       protocolVersion: this.protocolVersion,
       clientId: this.clientId,
