@@ -1,6 +1,7 @@
 import { Injectable }                          from '@angular/core';
 import { BehaviorSubject }                     from 'rxjs/BehaviorSubject';
 import { Observable }                          from 'rxjs/Observable';
+import { Observer }                            from 'rxjs/Observer';
 import { UsingObservable }                     from 'rxjs/observable/UsingObservable';
 import { Subject }                             from 'rxjs/Subject';
 import { Subscription, AnonymousSubscription } from 'rxjs/Subscription';
@@ -8,7 +9,8 @@ import * as MQTT                               from 'mqtt';
 import {
   MqttServiceOptions,
   MqttConnectionState,
-  MqttMessage
+  MqttMessage,
+  PublishOptions
 }                                              from './mqtt.model';
 import 'rxjs/add/operator/filter';
 import 'rxjs/add/operator/share';
@@ -81,6 +83,28 @@ export class MqttService {
         .share();
     }
     return this.observables[filter];
+  }
+
+  /**
+   * This method publishes a message for a topic with optional options.
+   * The returned observable will complete, if publishing was successfull
+   * and will throw an error, if the publication fails
+   * @param  {string}           topic
+   * @param  {any}              message
+   * @param  {PublishOptions}   options
+   * @return {Observable<void>}
+   */
+  public publish(topic: string, message: any, options?: PublishOptions): Observable<void> {
+    const source = Observable.create((obs: Observer<void>) => {
+      this.client.publish(topic, message, options, (err: any) => {
+        if (err) {
+          obs.error(err);
+        } else {
+          obs.complete();
+        }
+      });
+    });
+    return source;
   }
 
   /**

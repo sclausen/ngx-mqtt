@@ -1,4 +1,4 @@
-import { Packet } from 'mqtt';
+import { Packet, ClientPublishOptions } from 'mqtt';
 
 export interface MqttServiceOptions {
   hostname?: string;
@@ -19,4 +19,8 @@ export interface MqttMessage extends Packet {
   qos: number;
   retain: boolean;
   dup: boolean;
+}
+
+export interface PublishOptions extends ClientPublishOptions {
+
 }

@@ -90,10 +90,30 @@ export class MqttSimpleComponent {
         </tr>
       </tbody>
     </table>
+    
+    <form name="publishForm">
+      <div class="form-group">
+        <label for="topic">Topic</label>
+        <input type="text" class="form-control" id="topic" name="topic" [(ngModel)]="topic">
+      </div>
+      <div class="form-group">
+        <label for="message">Message</label>
+        <textarea class="form-control" id="message" name="message" [(ngModel)]="message"></textarea>
+      </div>
+      <button type="submit" class="btn btn-default" (click)="publish(topic, message)">Publish</button>
+    </form>
   `
 })
 export class MqttConnectComponent {
+  public topic: string;
+  public message: string;
   constructor(public mqtt: MqttService) { }
+  
+  public publish(topic: string, message: string) {
+    this.mqtt.publish(topic, message, {qos: 1}).subscribe((err)=>{
+      console.log(err);
+    });
+  }
 }
 
 @Component({
