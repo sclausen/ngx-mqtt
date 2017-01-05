@@ -96,7 +96,7 @@ export class MqttService {
    */
   public publish(topic: string, message: any, options?: PublishOptions): Observable<void> {
     const source = Observable.create((obs: Observer<void>) => {
-      this.client.publish(topic, message, options, (err: any) => {
+      this.client.publish(topic, message, options, (err: Error) => {
         if (err) {
           obs.error(err);
         } else {
@@ -105,6 +105,21 @@ export class MqttService {
       });
     });
     return source;
+  }
+
+  /**
+   * This method publishes a message for a topic with optional options.
+   * If an error occurs, it will throw.
+   * @param  {string}           topic
+   * @param  {any}              message
+   * @param  {PublishOptions}   options
+   */
+  public unsafePublish(topic: string, message: any, options?: PublishOptions): void {
+    this.client.publish(topic, message, options, (err: Error) => {
+      if (err) {
+        throw (err);
+      }
+    });
   }
 
   /**
