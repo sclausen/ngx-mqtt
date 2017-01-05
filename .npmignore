@@ -7,7 +7,6 @@ tests
 *.ts
 !*.d.ts
 mqtt.d.ts
-*.metadata.json
 make.js
 clean.js
 Makefile
