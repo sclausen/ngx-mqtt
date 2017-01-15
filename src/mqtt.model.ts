@@ -1,6 +1,6 @@
-import { Packet, ClientPublishOptions } from 'mqtt';
+import { Packet, ClientPublishOptions, ClientOptions } from 'mqtt';
 
-export interface MqttServiceOptions {
+export interface MqttServiceOptions extends ClientOptions {
   hostname?: string;
   port?: number;
   protocol?: string;

@@ -6,6 +6,7 @@ import { UsingObservable }                     from 'rxjs/observable/UsingObserv
 import { Subject }                             from 'rxjs/Subject';
 import { Subscription, AnonymousSubscription } from 'rxjs/Subscription';
 import * as MQTT                               from 'mqtt';
+import * as extend                             from 'xtend';
 import {
   MqttServiceOptions,
   MqttConnectionState,
@@ -20,7 +21,6 @@ export class MqttService {
 
   private client: MQTT.Client;
   private clientId: string = 'client-' + Math.random().toString(36).substr(2, 19);
-  private protocolVersion: number = 4;
   private keepalive: number = 10;
   private connectTimeout: number = 10000;
   private reconnectPeriod: number = 10000;
@@ -36,13 +36,12 @@ export class MqttService {
     const protocol = options.protocol || 'ws';
     const path = options.path || 'mqtt';
     this.url = `${protocol}://${hostname}:${port}/${path}`;
-    this.client = MQTT.connect(this.url, {
-      protocolVersion: this.protocolVersion,
+    this.client = MQTT.connect(this.url, extend({
       clientId: this.clientId,
       keepalive: this.keepalive,
       reconnectPeriod: this.reconnectPeriod,
       connectTimeout: this.connectTimeout
-    });
+    }, options));
     this.client.on('connect', this.onConnect);
     this.client.on('close', this.onClose);
     this.client.on('error', this.onError);
