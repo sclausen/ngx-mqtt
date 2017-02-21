@@ -25,7 +25,62 @@ npm install angular2-mqtt --save
 ```
 
 ## Usage
-How to use this module, see `demo.module.ts` and `index.html`.
+
+``` typescript
+import { Observable } from 'rxjs/Observable';
+
+import {
+  MqttMessage,
+  MqttModule,
+  MqttService
+}                        from 'angular2-mqtt';
+
+export const MQTT_SERVICE_OPTIONS = {
+  hostname: 'localhost',
+  port: 9001,
+  path: '/mqtt'
+};
+
+export function mqttServiceFactory() {
+  return new MqttService(MQTT_SERVICE_OPTIONS);
+}
+
+@NgModule({
+  imports: [
+    ...
+    MqttModule.forRoot({
+      provide: MqttService,
+      useFactory: mqttServiceFactory
+    })
+  ]
+  ...
+})
+
+export class AppModule { }
+
+@Component({
+  template: `
+    <h1>{{mesage}}</h1>
+    <h1>{{(myOtherMessage$ | async)?.payload.toString()}}</h1>
+  `
+})
+export class ExampleComponent {
+  public myOtherMessage$: Observable<MqttMessage>;
+
+  constructor(private _mqttService: MqttService) { 
+    this._mqttService.observe('my/topic').subscribe((message: MqttMessage) => {
+      this.myMessage = message.payload.toString();
+    });
+    this.myOtherMessage$ = this._mqttService.observe('my/other/topic');
+  }
+
+  public unsafePublish(topic: string, message: string): void {
+    this._mqttService.unsafePublish(topic, message, {qos: 1, retain: true});
+  }
+}
+```
+
+For further usage use this module, see `demo.module.ts` and `index.html`.
 To see the demo in action use
 ```sh
 npm install && npm run start

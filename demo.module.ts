@@ -90,7 +90,7 @@ export class MqttSimpleComponent {
         </tr>
       </tbody>
     </table>
-    
+
     <form name="publishForm">
       <div class="form-group">
         <label for="topic">Topic</label>
@@ -108,7 +108,7 @@ export class MqttConnectComponent {
   public topic: string;
   public message: string;
   constructor(public mqtt: MqttService) { }
-  
+
   public publish(topic: string, message: string) {
     this.mqtt.publish(topic, message, {qos: 1}).subscribe((err)=>{
       console.log(err);
