@@ -33,7 +33,7 @@ import {
   MqttMessage,
   MqttModule,
   MqttService
-}                        from 'angular2-mqtt';
+} from 'angular2-mqtt';
 
 export const MQTT_SERVICE_OPTIONS = {
   hostname: 'localhost',
