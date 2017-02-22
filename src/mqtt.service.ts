@@ -1,31 +1,31 @@
-import { Injectable }                          from '@angular/core';
-import { BehaviorSubject }                     from 'rxjs/BehaviorSubject';
-import { Observable }                          from 'rxjs/Observable';
-import { Observer }                            from 'rxjs/Observer';
-import { UsingObservable }                     from 'rxjs/observable/UsingObservable';
-import { Subject }                             from 'rxjs/Subject';
+import { Injectable } from '@angular/core';
+import * as MQTT from 'mqtt';
+import * as extend from 'xtend';
+
+import { BehaviorSubject } from 'rxjs/BehaviorSubject';
+import { Observable } from 'rxjs/Observable';
+import { Observer } from 'rxjs/Observer';
+import { UsingObservable } from 'rxjs/observable/UsingObservable';
+import { Subject } from 'rxjs/Subject';
 import { Subscription, AnonymousSubscription } from 'rxjs/Subscription';
-import * as MQTT                               from 'mqtt';
-import * as extend                             from 'xtend';
+import 'rxjs/add/operator/filter';
+import 'rxjs/add/operator/publishReplay';
+
 import {
   MqttServiceOptions,
   MqttConnectionState,
   MqttMessage,
   PublishOptions
-}                                              from './mqtt.model';
-import 'rxjs/add/operator/filter';
-import 'rxjs/add/operator/share';
+} from './mqtt.model';
 
 @Injectable()
 export class MqttService {
-
   private client: MQTT.Client;
   private clientId: string = 'client-' + Math.random().toString(36).substr(2, 19);
   private keepalive: number = 10;
   private connectTimeout: number = 10000;
   private reconnectPeriod: number = 10000;
   private url: string;
-
   public observables: { [filter: string]: Observable<MqttMessage> } = {};
   public state: BehaviorSubject<MqttConnectionState> = new BehaviorSubject(MqttConnectionState.CLOSED);
   public messages: Subject<MQTT.Packet> = new Subject<MQTT.Packet>();
@@ -61,6 +61,7 @@ export class MqttService {
    */
   public observe(filter: string): Observable<MqttMessage> {
     if (!this.observables[filter]) {
+
       this.observables[filter] = UsingObservable
         .create(
         // resourceFactory: Do the actual ref-counting MQTT subscription.
@@ -79,7 +80,8 @@ export class MqttService {
         // `observe` gets actually subscribed.
         (subscription: AnonymousSubscription) => this.messages)
         .filter((msg: MqttMessage) => MqttService.filterMatchesTopic(filter, msg.topic))
-        .share();
+        .publishReplay(1)
+        .refCount();
     }
     return this.observables[filter];
   }
@@ -171,6 +173,9 @@ export class MqttService {
 
   private onMessage = (topic, msg, packet) => {
     if (packet.cmd === 'publish') {
+      if (msg.retain === true) {
+        this.retainedMessages[msg.topic] = msg;
+      }
       this.messages.next(packet);
     }
   }
