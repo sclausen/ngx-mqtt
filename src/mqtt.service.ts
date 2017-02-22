@@ -173,9 +173,6 @@ export class MqttService {
 
   private onMessage = (topic, msg, packet) => {
     if (packet.cmd === 'publish') {
-      if (msg.retain === true) {
-        this.retainedMessages[msg.topic] = msg;
-      }
       this.messages.next(packet);
     }
   }
