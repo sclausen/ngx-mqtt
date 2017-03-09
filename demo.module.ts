@@ -5,17 +5,18 @@ import {
   NgModule,
   Pipe,
   PipeTransform
-}                        from '@angular/core';
+} from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
-import { FormsModule }   from '@angular/forms';
+import { FormsModule } from '@angular/forms';
 
-import { Observable }    from 'rxjs/Observable';
+import { Observable } from 'rxjs/Observable';
 
 import {
   MqttMessage,
   MqttModule,
-  MqttService
-}                        from 'angular2-mqtt';
+  MqttService,
+  OnMessageEvent
+} from 'angular2-mqtt';
 
 @Pipe({ name: 'keys', pure: false })
 export class KeysPipe implements PipeTransform {
@@ -110,7 +111,7 @@ export class MqttConnectComponent {
   constructor(public mqtt: MqttService) { }
 
   public publish(topic: string, message: string) {
-    this.mqtt.publish(topic, message, {qos: 1}).subscribe((err)=>{
+    this.mqtt.publish(topic, message, { qos: 1 }).subscribe((err) => {
       console.log(err);
     });
   }
@@ -123,12 +124,31 @@ export class MqttConnectComponent {
   `
 })
 export class ExampleComponent {
-  constructor(private mqttService: MqttService) { }
+  constructor(private _mqttService: MqttService) {
+    _mqttService.connect();
+    _mqttService.onConnect.subscribe((e) => {
+      console.log('onConnect', e);
+    });
+    _mqttService.onError.subscribe((e) => {
+      console.log('onError', e);
+    });
+    _mqttService.onClose.subscribe(() => {
+      console.log('onClose');
+    });
+    _mqttService.onReconnect.subscribe(() => {
+      console.log('onReconnect');
+    });
+    _mqttService.onMessage.subscribe((e) => {
+      console.log('onMessage', e);
+    });
+  }
 }
 
 export const MQTT_SERVICE_OPTIONS = {
+  connectOnCreate: false,
   hostname: 'localhost',
   port: 9001,
+  protocol: 'ws',
   path: '/mqtt'
 };
 

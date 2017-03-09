@@ -1,20 +1,17 @@
 {
   "compilerOptions": {
-    "noImplicitAny": false,
     "module": "es2015",
     "target": "es5",
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "declaration": true,
     "moduleResolution": "node",
-    "types": [
-      "hammerjs",
-      "jasmine",
-      "node"
-    ],
     "lib": [
-      "es2015",
+      "es2016",
       "dom"
+    ],
+    "typeRoots": [
+      "node_modules/@types"
     ]
   },
   "files": [
@@ -26,7 +23,6 @@
   ],
   "exclude": [
     "!./demo.module.ts",
-    "node_modules",
     "bundles"
   ],
   "angularCompilerOptions": {

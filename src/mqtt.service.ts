@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, EventEmitter } from '@angular/core';
 import * as MQTT from 'mqtt';
 import * as extend from 'xtend';
 
@@ -12,43 +12,69 @@ import 'rxjs/add/operator/filter';
 import 'rxjs/add/operator/publishReplay';
 
 import {
-  MqttServiceOptions,
   MqttConnectionState,
   MqttMessage,
+  MqttServiceOptions,
+  OnConnectEvent,
+  OnErrorEvent,
+  OnMessageEvent,
   PublishOptions
 } from './mqtt.model';
 
 @Injectable()
 export class MqttService {
-  private client: MQTT.Client;
-  private clientId: string = 'client-' + Math.random().toString(36).substr(2, 19);
-  private keepalive: number = 10;
-  private connectTimeout: number = 10000;
-  private reconnectPeriod: number = 10000;
-  private url: string;
   public observables: { [filter: string]: Observable<MqttMessage> } = {};
   public state: BehaviorSubject<MqttConnectionState> = new BehaviorSubject(MqttConnectionState.CLOSED);
   public messages: Subject<MQTT.Packet> = new Subject<MQTT.Packet>();
 
-  constructor(options: MqttServiceOptions) {
-    const hostname = options.hostname || 'localhost';
-    const port = options.port || 443;
+  private client: MQTT.Client;
+  private clientId = 'client-' + Math.random().toString(36).substr(2, 19);
+  private keepalive = 10;
+  private connectTimeout = 10000;
+  private reconnectPeriod = 10000;
+  private url: string;
+
+  public _onConnect: EventEmitter<OnConnectEvent> = new EventEmitter<OnConnectEvent>();
+  public _onClose: EventEmitter<void> = new EventEmitter<void>();
+  public _onError: EventEmitter<OnErrorEvent> = new EventEmitter<OnErrorEvent>();
+  public _onReconnect: EventEmitter<void> = new EventEmitter<void>();
+  public _onMessage: EventEmitter<OnMessageEvent> = new EventEmitter<OnMessageEvent>();
+
+  constructor(private options: MqttServiceOptions) {
+    if (options.connectOnCreate === true) {
+      this.connect();
+    }
+
+    this.state.subscribe();
+  }
+
+  public connect(opts?: MqttServiceOptions) {
+    const options = extend(this.options || {}, opts);
     const protocol = options.protocol || 'ws';
-    const path = options.path || 'mqtt';
+    const hostname = options.hostname || 'localhost';
+    const port = options.port || 1884;
+    const path = options.path || '/';
     this.url = `${protocol}://${hostname}:${port}/${path}`;
+
     this.client = MQTT.connect(this.url, extend({
       clientId: this.clientId,
       keepalive: this.keepalive,
       reconnectPeriod: this.reconnectPeriod,
       connectTimeout: this.connectTimeout
     }, options));
-    this.client.on('connect', this.onConnect);
-    this.client.on('close', this.onClose);
-    this.client.on('error', this.onError);
-    this.client.on('reconnect', this.onReconnect);
-    this.client.on('message', this.onMessage);
 
-    this.state.subscribe();
+    this.client.on('connect', this.handleOnConnect);
+    this.client.on('close', this.handleOnClose);
+    this.client.on('error', this.handleOnError);
+    this.client.on('reconnect', this.handleOnReconnect);
+    this.client.on('message', this.handleOnMessage);
+  }
+
+  public disconnect() {
+    if (!this.client) {
+      throw new Error('mqtt client not connected');
+    }
+    this.client.end();
   }
 
   /**
@@ -60,6 +86,9 @@ export class MqttService {
    * @return {Observable<MqttMessage>}        the observable you can subscribe to
    */
   public observe(filter: string): Observable<MqttMessage> {
+    if (!this.client) {
+      throw new Error('mqtt client not connected');
+    }
     if (!this.observables[filter]) {
 
       this.observables[filter] = UsingObservable
@@ -96,6 +125,9 @@ export class MqttService {
    * @return {Observable<void>}
    */
   public publish(topic: string, message: any, options?: PublishOptions): Observable<void> {
+    if (!this.client) {
+      throw new Error('mqtt client not connected');
+    }
     const source = Observable.create((obs: Observer<void>) => {
       this.client.publish(topic, message, options, (err: Error) => {
         if (err) {
@@ -116,6 +148,9 @@ export class MqttService {
    * @param  {PublishOptions}   options
    */
   public unsafePublish(topic: string, message: any, options?: PublishOptions): void {
+    if (!this.client) {
+      throw new Error('mqtt client not connected');
+    }
     this.client.publish(topic, message, options, (err: Error) => {
       if (err) {
         throw (err);
@@ -159,25 +194,86 @@ export class MqttService {
     return match();
   }
 
-  private onClose = (e) => {
+  private handleOnClose = () => {
     this.state.next(MqttConnectionState.CLOSED);
+    this._onClose.emit();
   }
 
-  private onConnect = (e) => {
+  private handleOnConnect = (e: OnConnectEvent) => {
     this.state.next(MqttConnectionState.CONNECTED);
+    this._onConnect.emit(e);
   }
 
-  private onReconnect = (e) => {
+  private handleOnReconnect = () => {
     this.state.next(MqttConnectionState.CONNECTING);
+    this._onReconnect.emit();
   }
 
-  private onMessage = (topic, msg, packet) => {
+  private handleOnError = (e: OnErrorEvent) => {
+    this._onError.emit(e);
+    console.error(e);
+  }
+
+  private handleOnMessage = (topic, msg, packet) => {
+    this._onMessage.emit(packet);
     if (packet.cmd === 'publish') {
       this.messages.next(packet);
     }
   }
 
-  private onError = (e) => {
-    console.error(e);
+
+  /**
+   * An EventEmitter to listen to close messages
+   * onClose.subscribe(() => {
+   *     // do something
+   * });
+   * @type {EventEmitter<void>}
+   */
+  public get onClose(): EventEmitter<void> {
+    return this._onClose;
+  }
+
+  /**
+   * An EventEmitter to listen to connect messages
+   * onConnect.subscribe((message: MqttMessage) => {
+   *     // do something
+   * });
+   * @type {EventEmitter<OnConnectEvent>}
+   */
+  public get onConnect(): EventEmitter<OnConnectEvent> {
+    return this._onConnect;
+  }
+
+  /**
+   * An EventEmitter to listen to reconnect messages
+   * onReconnect.subscribe(() => {
+   *     // do something
+   * });
+   * @type {EventEmitter<void>}
+   */
+  public get onReconnect(): EventEmitter<void> {
+    return this._onReconnect;
+  }
+
+  /**
+   * An EventEmitter to listen to message events
+   * onMessage.subscribe((e: OnMessageEvent) => {
+   *     // do something
+   * });
+   * @type {EventEmitter<OnMessageEvent>}
+   */
+  public get onMessage(): EventEmitter<OnMessageEvent> {
+    return this._onMessage;
+  }
+
+  /**
+   * An EventEmitter to listen to error events
+   * onError.subscribe((e: OnErrorEvent) => {
+   *     // do something
+   * });
+   * @type {EventEmitter<OnErrorEvent>}
+   */
+  public get onError(): EventEmitter<OnErrorEvent> {
+    return this._onError;
   }
 }

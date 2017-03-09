@@ -7,6 +7,7 @@ export * from './src/mqtt.service';
 export * from './src/mqtt.model';
 
 export const MQTT_SERVICE_OPTIONS: MqttServiceOptions = {
+  connectOnCreate: true,
   hostname: 'localhost',
   port: 1884,
   path: ''
