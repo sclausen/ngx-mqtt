@@ -1,4 +1,4 @@
-import { MqttService } from '../angular2-mqtt';
+import { MqttService } from '../ngx-mqtt';
 
 describe('MqttService', () => {
   it('is defined', () => {

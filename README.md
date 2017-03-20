@@ -1,6 +1,6 @@
-# angular2-mqtt [![npm version](https://badge.fury.io/js/angular2-mqtt.svg)](https://badge.fury.io/js/angular2-mqtt)
+# ngx-mqtt [![npm version](https://badge.fury.io/js/ngx-mqtt.svg)](https://badge.fury.io/js/ngx-mqtt)
 
-This library isn't just a wrapper around MQTT.js for angular2.
+This library isn't just a wrapper around MQTT.js for angular >= 2.
 It uses observables and takes care of subscription handling and message routing.
 
 * [Description](#description)
@@ -9,7 +9,7 @@ It uses observables and takes care of subscription handling and message routing.
 * [Test](#test)
 
 ## Description
-angular2-mqtt is well suited for applications with many components and many subscribers. 
+ngx-mqtt is well suited for applications with many components and many subscribers. 
 The problem is, if you regulary subscribe to mqtt with client libraries like `MQTT.js`, still every message is handled with an on-message-eventhandler, so you have to dispatch the received messages for yourself.
 So, if you have multiple components using mqtt in your code, you just want to only receive the messages for your local filter.
 Furthermore, if you destroy a component, you want to unsubscribe from mqtt, but only if no other component uses the same filter.
@@ -21,7 +21,7 @@ This library exposes a method `observe(filter)`, which returns an Observable. If
 Simply install it from npm:
 
 ```sh
-npm install angular2-mqtt --save
+npm install ngx-mqtt --save
 ```
 
 ## Usage
@@ -33,7 +33,7 @@ import {
   MqttMessage,
   MqttModule,
   MqttService
-} from 'angular2-mqtt';
+} from 'ngx-mqtt';
 
 export const MQTT_SERVICE_OPTIONS = {
   hostname: 'localhost',

@@ -16,7 +16,7 @@
   },
   "files": [
     "./index.ts",
-    "./angular2-mqtt.ts",
+    "./ngx-mqtt.ts",
     "./src/mqtt.model.ts",
     "./src/mqtt.service.ts",
     "./tests/mqtt.service.spec.ts"

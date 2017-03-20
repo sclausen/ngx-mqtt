@@ -19,14 +19,14 @@ module.exports = {
     extensions: ['.ts', '.js']
   },
 
-  entry: helpers.root('angular2-mqtt.ts'),
+  entry: helpers.root('ngx-mqtt.ts'),
 
   output: {
     path: helpers.root('bundles'),
     publicPath: '/',
-    filename: 'angular2-mqtt.min.js',
+    filename: 'ngx-mqtt.min.js',
     libraryTarget: 'umd',
-    library: 'angular2-mqtt'
+    library: 'ngx-mqtt'
   },
 
   // require those dependencies but don't bundle them
@@ -39,7 +39,7 @@ module.exports = {
       {
         enforce: 'pre',
         test: /\.ts$/,
-        loader: 'tslint',
+        loader: 'tslint-loader',
         exclude: [helpers.root('node_modules')]
       }, {
         test: /\.ts$/,

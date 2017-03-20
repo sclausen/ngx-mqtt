@@ -16,7 +16,7 @@ import {
   MqttModule,
   MqttService,
   OnMessageEvent
-} from 'angular2-mqtt';
+} from 'ngx-mqtt';
 
 @Pipe({ name: 'keys', pure: false })
 export class KeysPipe implements PipeTransform {
