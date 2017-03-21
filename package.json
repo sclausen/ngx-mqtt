@@ -1,6 +1,6 @@
 {
   "name": "ngx-mqtt",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "ngx mqtt client library",
   "main": "bundles/ngx-mqtt.min.js",
   "module": "index.js",
@@ -23,24 +23,25 @@
   "author": {
     "name": "sclausen"
   },
-  "contributors": [
-    {
-      "name": "lpeterse"
-    }
-  ],
+  "contributors": [{
+    "name": "lpeterse"
+  }],
   "license": "MIT",
+  "peerDependencies": {
+    "@angular/core": ">=2.0.0 || >=4.0.0-beta.0",
+    "rxjs": "^5.0.1"
+  },
   "dependencies": {
-    "@angular/core": "^4.0.0-rc.5",
-    "@types/mqtt": "0.0.33",
-    "mqtt": "2.5.0",
-    "rxjs": "^5.2.0"
+    "mqtt": "2.5.0"
   },
   "devDependencies": {
-    "@angular/common": "^4.0.0-rc.5",
-    "@angular/compiler": "^4.0.0-rc.5",
-    "@angular/compiler-cli": "^4.0.0-rc.5",
-    "@angular/platform-browser": "^4.0.0-rc.5",
-    "@angular/platform-browser-dynamic": "^4.0.0-rc.5",
+    "@types/mqtt": "0.0.33",
+    "@angular/core": "2.4.10",
+    "@angular/common": "2.4.10",
+    "@angular/compiler": "2.4.10",
+    "@angular/compiler-cli": "2.4.10",
+    "@angular/platform-browser": "2.4.10",
+    "@angular/platform-browser-dynamic": "2.4.10",
     "@types/hammerjs": "2.0.33",
     "@types/jasmine": "2.5.35",
     "@types/node": "6.0.45",
@@ -67,6 +68,7 @@
     "tslint-loader": "3.4.3",
     "typescript": "2.2.1",
     "webpack": "2.2.1",
-    "zone.js": "0.8.4"
+    "rxjs": "^5.0.1",
+    "zone.js": "^0.7.7"
   }
 }
