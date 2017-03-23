@@ -48,7 +48,7 @@ export class MqttService {
     this.state.subscribe();
   }
 
-  public connect(opts?: MqttServiceOptions) {
+  public connect(opts?: MqttServiceOptions, client?: MQTT.Client) {
     const options = extend(this.options || {}, opts);
     const protocol = options.protocol || 'ws';
     const hostname = options.hostname || 'localhost';
@@ -56,12 +56,16 @@ export class MqttService {
     const path = options.path || '/';
     this.url = `${protocol}://${hostname}:${port}/${path}`;
 
-    this.client = MQTT.connect(this.url, extend({
-      clientId: this.clientId,
-      keepalive: this.keepalive,
-      reconnectPeriod: this.reconnectPeriod,
-      connectTimeout: this.connectTimeout
-    }, options));
+    if (!client) {
+      this.client = MQTT.connect(this.url, extend({
+        clientId: this.clientId,
+        keepalive: this.keepalive,
+        reconnectPeriod: this.reconnectPeriod,
+        connectTimeout: this.connectTimeout
+      }, options));
+    } else {
+      this.client = client;
+    }
 
     this.client.on('connect', this.handleOnConnect);
     this.client.on('close', this.handleOnClose);
