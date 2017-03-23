@@ -21,13 +21,13 @@ import {
   PublishOptions
 } from './mqtt.model';
 
+
 @Injectable()
 export class MqttService {
   public observables: { [filter: string]: Observable<MqttMessage> } = {};
   public state: BehaviorSubject<MqttConnectionState> = new BehaviorSubject(MqttConnectionState.CLOSED);
   public messages: Subject<MQTT.Packet> = new Subject<MQTT.Packet>();
 
-  private client: MQTT.Client;
   private clientId = 'client-' + Math.random().toString(36).substr(2, 19);
   private keepalive = 10;
   private connectTimeout = 10000;
@@ -40,9 +40,9 @@ export class MqttService {
   public _onReconnect: EventEmitter<void> = new EventEmitter<void>();
   public _onMessage: EventEmitter<OnMessageEvent> = new EventEmitter<OnMessageEvent>();
 
-  constructor(private options: MqttServiceOptions) {
+  constructor(private options: MqttServiceOptions, private client?: MQTT.Client) {
     if (options.connectOnCreate === true) {
-      this.connect();
+      this.connect({}, client);
     }
 
     this.state.subscribe();
