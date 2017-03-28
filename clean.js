@@ -1,5 +1,5 @@
 var rimraf = require('rimraf');
-var prefixes = ['./index', './ngx-mqtt', './src/mqtt.model', './src/mqtt.service', './tests/mqtt.service.spec'];
+var prefixes = ['./src/index', './src/mqtt.model', './src/mqtt.service', './tests/mqtt.service.spec'];
 var suffixes = ['.js', '.d.ts', '.metadata.json'];
 var list = [];
 
@@ -9,4 +9,4 @@ prefixes.forEach(function(prefix) {
   });
 });
 
-rimraf.sync("{" + list.join(",") + ",bundles,coverage}");
+rimraf.sync("{" + list.join(",") + ",bundles,coverage,documentation}");

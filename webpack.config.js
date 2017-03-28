@@ -19,7 +19,7 @@ module.exports = {
     extensions: ['.ts', '.js']
   },
 
-  entry: helpers.root('ngx-mqtt.ts'),
+  entry: helpers.root('./src/index.ts'),
 
   output: {
     path: helpers.root('bundles'),
@@ -35,27 +35,25 @@ module.exports = {
   ],
 
   module: {
-    rules: [
-      {
-        enforce: 'pre',
-        test: /\.ts$/,
-        loader: 'tslint-loader',
-        exclude: [helpers.root('node_modules')]
-      }, {
-        test: /\.ts$/,
-        loader: 'awesome-typescript-loader?declaration=false',
-        exclude: [/\.e2e\.ts$/]
-      }
-    ]
+    rules: [{
+      enforce: 'pre',
+      test: /\.ts$/,
+      loader: 'tslint-loader',
+      exclude: [helpers.root('node_modules')]
+    }, {
+      test: /\.ts$/,
+      loader: 'awesome-typescript-loader?declaration=false',
+      exclude: [/\.e2e\.ts$/]
+    }]
   },
 
   plugins: [
     // fix the warning in ./~/@angular/core/src/linker/system_js_ng_module_factory_loader.js
     new webpack.ContextReplacementPlugin(/angular(\\|\/)core(\\|\/)(esm(\\|\/)src|src)(\\|\/)linker/, helpers.root('./src')),
     new webpack.optimize.UglifyJsPlugin({
-        compress: {
-            warnings: false
-        }
+      compress: {
+        warnings: false
+      }
     }),
     new webpack.LoaderOptionsPlugin({
       options: {

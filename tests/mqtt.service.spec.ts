@@ -1,4 +1,4 @@
-import { MqttService } from '../ngx-mqtt';
+import { MqttService } from '../src/index';
 
 describe('MqttService', () => {
   it('is defined', () => {
