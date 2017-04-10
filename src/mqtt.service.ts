@@ -55,7 +55,7 @@ export class MqttService {
     const port = options.port || 1884;
     const path = options.path || '/';
     this.url = `${protocol}://${hostname}:${port}/${path}`;
-
+    this.state.next(MqttConnectionState.CONNECTING);
     if (!client) {
       this.client = MQTT.connect(this.url, extend({
         clientId: this.clientId,
