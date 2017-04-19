@@ -100,5 +100,5 @@ npm run serve:docs # open a local webserver serving the documentation
 ## Test
 
 ```
-$ npm test
+npm test
 ```
