@@ -22,10 +22,18 @@ import {
 } from './mqtt.model';
 
 
+/**
+ * With an instance of MqttService, you can observe and subscribe to MQTT in multiple places, e.g. in different components,
+ * to only subscribe to the broker once per MQTT filter.
+ * It also handles proper unsubscription from the broker, if the last observable with a filter is closed.
+ */
 @Injectable()
 export class MqttService {
+  /** a map of all mqtt observables by filter */
   public observables: { [filter: string]: Observable<MqttMessage> } = {};
+  /** the connection state */
   public state: BehaviorSubject<MqttConnectionState> = new BehaviorSubject(MqttConnectionState.CLOSED);
+  /** an observable of the last mqtt message */
   public messages: Subject<MQTT.Packet> = new Subject<MQTT.Packet>();
 
   private clientId = 'client-' + Math.random().toString(36).substr(2, 19);
@@ -34,12 +42,19 @@ export class MqttService {
   private reconnectPeriod = 10000;
   private url: string;
 
-  public _onConnect: EventEmitter<OnConnectEvent> = new EventEmitter<OnConnectEvent>();
-  public _onClose: EventEmitter<void> = new EventEmitter<void>();
-  public _onError: EventEmitter<OnErrorEvent> = new EventEmitter<OnErrorEvent>();
-  public _onReconnect: EventEmitter<void> = new EventEmitter<void>();
-  public _onMessage: EventEmitter<OnMessageEvent> = new EventEmitter<OnMessageEvent>();
+  private _onConnect: EventEmitter<OnConnectEvent> = new EventEmitter<OnConnectEvent>();
+  private _onClose: EventEmitter<void> = new EventEmitter<void>();
+  private _onError: EventEmitter<OnErrorEvent> = new EventEmitter<OnErrorEvent>();
+  private _onReconnect: EventEmitter<void> = new EventEmitter<void>();
+  private _onMessage: EventEmitter<OnMessageEvent> = new EventEmitter<OnMessageEvent>();
 
+  /**
+   * The constructor needs [connection options]{@link MqttServiceOptions} regarding the broker and some
+   * options to configure behavior of this service, like if the connection to the broker
+   * should be established on creation of this service or not.
+   * @param options connection and creation options for MQTT.js and this service
+   * @param client a already created MQTT.Client
+   */
   constructor(private options: MqttServiceOptions, private client?: MQTT.Client) {
     if (options.connectOnCreate === true) {
       this.connect({}, client);
@@ -48,6 +63,11 @@ export class MqttService {
     this.state.subscribe();
   }
 
+  /**
+   * connect manually connects to the mqtt broker.
+   * @param opts the connection options
+   * @param client an optional MQTT.Client
+   */
   public connect(opts?: MqttServiceOptions, client?: MQTT.Client) {
     const options = extend(this.options || {}, opts);
     const protocol = options.protocol || 'ws';
@@ -74,6 +94,9 @@ export class MqttService {
     this.client.on('message', this.handleOnMessage);
   }
 
+  /** disconnect disconnects from the mqtt client.
+   *  This method `should` be executed when leaving the application.
+   */
   public disconnect() {
     if (!this.client) {
       throw new Error('mqtt client not connected');
@@ -198,6 +221,32 @@ export class MqttService {
     return match();
   }
 
+
+  /** An EventEmitter to listen to close messages */
+  public get onClose(): EventEmitter<void> {
+    return this._onClose;
+  }
+
+  /** An EventEmitter to listen to connect messages */
+  public get onConnect(): EventEmitter<OnConnectEvent> {
+    return this._onConnect;
+  }
+
+  /** An EventEmitter to listen to reconnect messages */
+  public get onReconnect(): EventEmitter<void> {
+    return this._onReconnect;
+  }
+
+  /** An EventEmitter to listen to message events */
+  public get onMessage(): EventEmitter<OnMessageEvent> {
+    return this._onMessage;
+  }
+
+  /** An EventEmitter to listen to error events */
+  public get onError(): EventEmitter<OnErrorEvent> {
+    return this._onError;
+  }
+
   private handleOnClose = () => {
     this.state.next(MqttConnectionState.CLOSED);
     this._onClose.emit();
@@ -223,61 +272,5 @@ export class MqttService {
     if (packet.cmd === 'publish') {
       this.messages.next(packet);
     }
-  }
-
-
-  /**
-   * An EventEmitter to listen to close messages
-   * onClose.subscribe(() => {
-   *     // do something
-   * });
-   * @type {EventEmitter<void>}
-   */
-  public get onClose(): EventEmitter<void> {
-    return this._onClose;
-  }
-
-  /**
-   * An EventEmitter to listen to connect messages
-   * onConnect.subscribe((message: MqttMessage) => {
-   *     // do something
-   * });
-   * @type {EventEmitter<OnConnectEvent>}
-   */
-  public get onConnect(): EventEmitter<OnConnectEvent> {
-    return this._onConnect;
-  }
-
-  /**
-   * An EventEmitter to listen to reconnect messages
-   * onReconnect.subscribe(() => {
-   *     // do something
-   * });
-   * @type {EventEmitter<void>}
-   */
-  public get onReconnect(): EventEmitter<void> {
-    return this._onReconnect;
-  }
-
-  /**
-   * An EventEmitter to listen to message events
-   * onMessage.subscribe((e: OnMessageEvent) => {
-   *     // do something
-   * });
-   * @type {EventEmitter<OnMessageEvent>}
-   */
-  public get onMessage(): EventEmitter<OnMessageEvent> {
-    return this._onMessage;
-  }
-
-  /**
-   * An EventEmitter to listen to error events
-   * onError.subscribe((e: OnErrorEvent) => {
-   *     // do something
-   * });
-   * @type {EventEmitter<OnErrorEvent>}
-   */
-  public get onError(): EventEmitter<OnErrorEvent> {
-    return this._onError;
   }
 }
