@@ -9,6 +9,7 @@ src/**/*.metadata.json
 *.d.ts
 *.metadata.json
 coverage
+documentation
 bundles
 node_modules
 npm-debug.log

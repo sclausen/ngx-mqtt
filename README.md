@@ -9,7 +9,7 @@ It uses observables and takes care of subscription handling and message routing.
 * [Test](#test)
 
 ## Description
-ngx-mqtt is well suited for applications with many components and many subscribers. 
+ngx-mqtt is well suited for applications with many components and many subscribers.
 The problem is, if you regulary subscribe to mqtt with client libraries like `MQTT.js`, still every message is handled with an on-message-eventhandler, so you have to dispatch the received messages for yourself.
 So, if you have multiple components using mqtt in your code, you just want to only receive the messages for your local filter.
 Furthermore, if you destroy a component, you want to unsubscribe from mqtt, but only if no other component uses the same filter.
@@ -23,6 +23,14 @@ Simply install it from npm:
 ```sh
 npm install ngx-mqtt --save
 ```
+
+## Run Demo Application
+```sh
+npm i              # install all dependencies
+npm run build      # build the library
+npm run serve:demo # start a local http server to run the demo module
+```
+If you change something in the code of the library (anything in the `src` folder), you have to rerun `npm run build` to see the changes. Changes in `demo.module.ts` only require a page refresh.
 
 ## Usage
 
@@ -67,7 +75,7 @@ export class AppModule { }
 export class ExampleComponent {
   public myOtherMessage$: Observable<MqttMessage>;
 
-  constructor(private _mqttService: MqttService) { 
+  constructor(private _mqttService: MqttService) {
     this._mqttService.observe('my/topic').subscribe((message: MqttMessage) => {
       this.myMessage = message.payload.toString();
     });
@@ -81,9 +89,12 @@ export class ExampleComponent {
 ```
 
 For further usage use this module, see `demo.module.ts` and `index.html`.
-To see the demo in action use
+
+## Documentation
+
 ```sh
-npm install && npm run start
+npm run docs       # build the documentation
+npm run serve:docs # open a local webserver serving the documentation
 ```
 
 ## Test
