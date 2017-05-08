@@ -36,7 +36,7 @@ export class MqttService {
   /** an observable of the last mqtt message */
   public messages: Subject<MQTT.Packet> = new Subject<MQTT.Packet>();
 
-  private clientId = 'client-' + Math.random().toString(36).substr(2, 19);
+  private clientId = this._generateClientId();
   private keepalive = 10;
   private connectTimeout = 10000;
   private reconnectPeriod = 10000;
@@ -87,11 +87,11 @@ export class MqttService {
       this.client = client;
     }
 
-    this.client.on('connect', this.handleOnConnect);
-    this.client.on('close', this.handleOnClose);
-    this.client.on('error', this.handleOnError);
-    this.client.on('reconnect', this.handleOnReconnect);
-    this.client.on('message', this.handleOnMessage);
+    this.client.on('connect', this._handleOnConnect);
+    this.client.on('close', this._handleOnClose);
+    this.client.on('error', this._handleOnError);
+    this.client.on('reconnect', this._handleOnReconnect);
+    this.client.on('message', this._handleOnMessage);
   }
 
   /** disconnect disconnects from the mqtt client.
@@ -247,30 +247,40 @@ export class MqttService {
     return this._onError;
   }
 
-  private handleOnClose = () => {
+  private _handleOnClose = () => {
     this.state.next(MqttConnectionState.CLOSED);
     this._onClose.emit();
   }
 
-  private handleOnConnect = (e: OnConnectEvent) => {
+  private _handleOnConnect = (e: OnConnectEvent) => {
+    Object.keys(this.observables).forEach((filter: string) => {
+      this.client.subscribe(filter);
+    });
     this.state.next(MqttConnectionState.CONNECTED);
     this._onConnect.emit(e);
   }
 
-  private handleOnReconnect = () => {
+  private _handleOnReconnect = () => {
+    Object.keys(this.observables).forEach((filter: string) => {
+      this.client.subscribe(filter);
+    });
     this.state.next(MqttConnectionState.CONNECTING);
     this._onReconnect.emit();
   }
 
-  private handleOnError = (e: OnErrorEvent) => {
+  private _handleOnError = (e: OnErrorEvent) => {
     this._onError.emit(e);
     console.error(e);
   }
 
-  private handleOnMessage = (topic, msg, packet) => {
+  private _handleOnMessage = (topic, msg, packet) => {
     this._onMessage.emit(packet);
     if (packet.cmd === 'publish') {
       this.messages.next(packet);
     }
+  }
+
+  private _generateClientId() {
+    return 'client-' + Math.random().toString(36).substr(2, 19);
   }
 }
