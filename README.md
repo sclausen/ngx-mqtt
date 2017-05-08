@@ -3,6 +3,8 @@
 This library isn't just a wrapper around MQTT.js for angular >= 2.
 It uses observables and takes care of subscription handling and message routing.
 
+**NOTE**: Since I somehow messed up the versions conflicting between angular2-mqtt and ngx-mqtt, the there is a gap between `1.4.1` to `1.8.0`.
+
 * [Description](#description)
 * [Installation](#installation)
 * [Usage](#usage)
