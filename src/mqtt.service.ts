@@ -56,7 +56,7 @@ export class MqttService {
    * @param client a already created MQTT.Client
    */
   constructor(private options: MqttServiceOptions, private client?: MQTT.Client) {
-    if (options.connectOnCreate === true) {
+    if (options.connectOnCreate !== false) {
       this.connect({}, client);
     }
 
