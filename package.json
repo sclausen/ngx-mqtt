@@ -1,6 +1,6 @@
 {
   "name": "ngx-mqtt",
-  "version": "1.10.0",
+  "version": "1.11.0",
   "description": "ngx mqtt client library",
   "main": "bundles/ngx-mqtt.min.js",
   "module": "./src/index.js",
@@ -35,7 +35,7 @@
     "rxjs": "^5.0.1"
   },
   "dependencies": {
-    "mqtt": "2.7.2"
+    "mqtt": "2.9.0"
   },
   "devDependencies": {
     "@angular/common": "2.4.10",
