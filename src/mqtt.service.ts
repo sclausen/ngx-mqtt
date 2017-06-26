@@ -74,6 +74,8 @@ export class MqttService {
     const hostname = options.hostname || 'localhost';
     const port = options.port || 1884;
     const path = options.path || '/';
+    this.clientId = options.clientId || this.clientId;
+
     this.url = `${protocol}://${hostname}:${port}/${path}`;
     this.state.next(MqttConnectionState.CONNECTING);
     if (!client) {
