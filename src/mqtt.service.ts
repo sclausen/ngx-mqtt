@@ -152,7 +152,7 @@ export class MqttService {
 
   /**
    * This method publishes a message for a topic with optional options.
-   * The returned observable will complete, if publishing was successfull
+   * The returned observable will complete, if publishing was successful
    * and will throw an error, if the publication fails
    * @param  {string}           topic
    * @param  {any}              message
@@ -196,7 +196,7 @@ export class MqttService {
   /**
    * This static method shall be used to determine whether an MQTT
    * topic matches a given filter. The matching rules are specified in the MQTT
-   * standard documenation and in the library test suite.
+   * standard documentation and in the library test suite.
    *
    * @param  {string}  filter A filter may contain wildcards like '#' and '+'.
    * @param  {string}  topic  A topic may not contain wildcards.
@@ -209,14 +209,14 @@ export class MqttService {
     // Preparation: split and reverse on '/'. The JavaScript split function is sane.
     const fs = (filter || '').split('/').reverse();
     const ts = (topic || '').split('/').reverse();
-    // This function is tail recursive and compoares both arrays one element at a time.
+    // This function is tail recursive and compares both arrays one element at a time.
     const match = (): boolean => {
       // Cutting of the last element of both the filter and the topic using pop().
       const f = fs.pop();
       const t = ts.pop();
       switch (f) {
         // In case the filter level is '#', this is a match not matter whether
-        // the topic is undefined on this level or not ('#'' matches parent element as well!).
+        // the topic is undefined on this level or not ('#' matches parent element as well!).
         case '#': return true;
         // In case the filter level is '+', we shall dive into the recursion only if t is not undefined.
         case '+': return t ? match() : false;
