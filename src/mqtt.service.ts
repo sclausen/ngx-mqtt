@@ -53,7 +53,7 @@ export class MqttService {
    * options to configure behavior of this service, like if the connection to the broker
    * should be established on creation of this service or not.
    * @param options connection and creation options for MQTT.js and this service
-   * @param client a already created MQTT.Client
+   * @param client an instance of MQTT.Client
    */
   constructor(private options: MqttServiceOptions, private client?: MQTT.Client) {
     if (options.connectOnCreate !== false) {
@@ -194,7 +194,7 @@ export class MqttService {
   }
 
   /**
-   * This static method shall be used to determine whether an MQTT
+   * This static method shall be used to determine whether a MQTT
    * topic matches a given filter. The matching rules are specified in the MQTT
    * standard documentation and in the library test suite.
    *
@@ -215,7 +215,7 @@ export class MqttService {
       const f = fs.pop();
       const t = ts.pop();
       switch (f) {
-        // In case the filter level is '#', this is a match not matter whether
+        // In case the filter level is '#', this match always whether
         // the topic is undefined on this level or not ('#' matches parent element as well!).
         case '#': return true;
         // In case the filter level is '+', we shall dive into the recursion only if t is not undefined.
