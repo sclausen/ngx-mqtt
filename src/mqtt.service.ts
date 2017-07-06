@@ -215,7 +215,7 @@ export class MqttService {
       const f = fs.pop();
       const t = ts.pop();
       switch (f) {
-        // In case the filter level is '#', this match always whether
+        // In case the filter level is '#', this is a match no matter whether
         // the topic is undefined on this level or not ('#' matches parent element as well!).
         case '#': return true;
         // In case the filter level is '+', we shall dive into the recursion only if t is not undefined.
