@@ -11,6 +11,7 @@ describe('MqttService.filterMatchesTopic', () => {
     expect(MqttService.filterMatchesTopic).toBeDefined();
   });
   const matches: any = [
+    ['$',     '#',       false],
     ['a',     'a',       true],
     ['a',     '#',       true],
     ['a',     'a/#',     true],
