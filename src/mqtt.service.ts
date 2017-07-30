@@ -34,7 +34,7 @@ export class MqttService {
   /** the connection state */
   public state: BehaviorSubject<MqttConnectionState> = new BehaviorSubject(MqttConnectionState.CLOSED);
   /** an observable of the last mqtt message */
-  public messages: Subject<MQTT.IPacket> = new Subject<MQTT.IPacket>();
+  public messages: Subject<MqttMessage> = new Subject<MqttMessage>();
 
   private clientId = this._generateClientId();
   private keepalive = 10;
@@ -118,7 +118,7 @@ export class MqttService {
     }
     if (!this.observables[filter]) {
       const rejected = new Subject();
-      this.observables[filter] = UsingObservable
+      this.observables[filter] = <Observable<MqttMessage>>UsingObservable
         .create(
         // resourceFactory: Do the actual ref-counting MQTT subscription.
         // refcount is decreased on unsubscribe.
