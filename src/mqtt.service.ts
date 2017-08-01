@@ -36,11 +36,11 @@ export class MqttService {
   /** an observable of the last mqtt message */
   public messages: Subject<MqttMessage> = new Subject<MqttMessage>();
 
-  private clientId = this._generateClientId();
-  private keepalive = 10;
-  private connectTimeout = 10000;
-  private reconnectPeriod = 10000;
-  private url: string;
+  private _clientId = this._generateClientId();
+  private _keepalive = 10;
+  private _connectTimeout = 10000;
+  private _reconnectPeriod = 10000;
+  private _url: string;
 
   private _onConnect: EventEmitter<OnConnectEvent> = new EventEmitter<OnConnectEvent>();
   private _onClose: EventEmitter<void> = new EventEmitter<void>();
@@ -74,14 +74,14 @@ export class MqttService {
     const hostname = options.hostname || 'localhost';
     const port = options.port || 1884;
     const path = options.path || '/';
-    this.url = `${protocol}://${hostname}:${port}/${path}`;
+    this._url = `${protocol}://${hostname}:${port}/${path}`;
     this.state.next(MqttConnectionState.CONNECTING);
     if (!client) {
-      this.client = MQTT.connect(this.url, extend({
-        clientId: this.clientId,
-        keepalive: this.keepalive,
-        reconnectPeriod: this.reconnectPeriod,
-        connectTimeout: this.connectTimeout
+      this.client = MQTT.connect(this._url, extend({
+        clientId: this._clientId,
+        keepalive: this._keepalive,
+        reconnectPeriod: this._reconnectPeriod,
+        connectTimeout: this._connectTimeout
       }, options));
     } else {
       this.client = client;
@@ -94,8 +94,16 @@ export class MqttService {
     this.client.on('message', this._handleOnMessage);
   }
 
-  /** disconnect disconnects from the mqtt client.
-   *  This method `should` be executed when leaving the application.
+  /**
+   * gets the _clientId
+   */
+  public get clientId() {
+    return this._clientId;
+  }
+
+  /**
+   * disconnect disconnects from the mqtt client.
+   * This method `should` be executed when leaving the application.
    */
   public disconnect() {
     if (!this.client) {
