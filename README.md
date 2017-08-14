@@ -28,12 +28,9 @@ npm install ngx-mqtt --save
 
 ## Run Demo Application
 ```sh
-npm i              # install all dependencies
-npm run build      # build the library
-npm run serve:demo # start a local http server to run the demo module
+npm run serve:demo # go into demo folder, install npm dependencies and run ng serve
 ```
-If you change something in the code of the library (anything in the `src` folder), you have to rerun `npm run build` to see the changes. Changes in `demo.module.ts` only require a page refresh.
-
+Keep in mind, that the demo is a self contained @angular/cli application, which depends on a ngx-mqtt release and not the source code.
 ## Usage
 
 ``` typescript

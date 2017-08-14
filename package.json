@@ -10,7 +10,7 @@
     "test": "karma start",
     "build": "node clean && ngc && webpack",
     "docs": "compodoc src -p tsconfig.json",
-    "serve:demo": "cd demo && ng serve",
+    "serve:demo": "cd demo && npm i && ng serve",
     "serve:docs": "http-server documentation",
     "prepare": "node clean && ngc && webpack"
   },
