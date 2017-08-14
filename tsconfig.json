@@ -21,10 +21,6 @@
     "./src/mqtt.service.ts",
     "./tests/mqtt.service.spec.ts"
   ],
-  "exclude": [
-    "!./demo.module.ts",
-    "bundles"
-  ],
   "angularCompilerOptions": {
     "strictMetadataEmit": true,
     "skipTemplateCodegen": true

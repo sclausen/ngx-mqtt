@@ -10,7 +10,7 @@
     "test": "karma start",
     "build": "node clean && ngc && webpack",
     "docs": "compodoc src -p tsconfig.json",
-    "serve:demo": "http-server",
+    "serve:demo": "cd demo && ng serve",
     "serve:docs": "http-server documentation",
     "prepare": "node clean && ngc && webpack"
   },
@@ -40,6 +40,7 @@
     "mqtt": "2.9.0"
   },
   "devDependencies": {
+    "@angular/cli": "^1.3.0",
     "@angular/common": "2.4.10",
     "@angular/compiler": "2.4.10",
     "@angular/compiler-cli": "2.4.10",
