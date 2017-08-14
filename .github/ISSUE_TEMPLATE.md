@@ -24,6 +24,7 @@ ISSUES MISSING IMPORTANT INFORMATION MAY BE CLOSED WITHOUT INVESTIGATION.
 ## Minimal reproduction of the problem with instructions
 <!--
 For bug reports please provide the *STEPS TO REPRODUCE* and if possible a *MINIMAL DEMO* of the problem in a separated repository.
+A startingpoint for your stripped down example may be the provided demo
 -->
 
 ## What is the motivation / use case for changing the behavior?
