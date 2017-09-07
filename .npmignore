@@ -1,11 +1,12 @@
 config
 documentation
+demo
 coverage
 node_modules
-demo.module.ts
 index.html
 tests
 *.ts
+.vscode
 !*.d.ts
 mqtt.d.ts
 make.js

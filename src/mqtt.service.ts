@@ -19,6 +19,7 @@ import {
   OnConnectEvent,
   OnErrorEvent,
   OnMessageEvent,
+  OnSubackEvent,
   PublishOptions
 } from './mqtt.model';
 
@@ -47,6 +48,7 @@ export class MqttService {
   private _onError: EventEmitter<OnErrorEvent> = new EventEmitter<OnErrorEvent>();
   private _onReconnect: EventEmitter<void> = new EventEmitter<void>();
   private _onMessage: EventEmitter<OnMessageEvent> = new EventEmitter<OnMessageEvent>();
+  private _onSuback: EventEmitter<OnSubackEvent> = new EventEmitter<OnSubackEvent>();
 
   /**
    * The constructor needs [connection options]{@link MqttServiceOptions} regarding the broker and some
@@ -138,7 +140,8 @@ export class MqttService {
                 delete this.observables[granted_.topic];
                 this.client.unsubscribe(granted_.topic);
                 rejected.error(`subscription for '${granted_.topic}' rejected!`);
-              };
+              }
+              this._onSuback.emit({filter: filter, granted: granted_.qos !== 128});
             });
           });
           subscription.add(() => {
@@ -256,6 +259,11 @@ export class MqttService {
   /** An EventEmitter to listen to message events */
   public get onMessage(): EventEmitter<OnMessageEvent> {
     return this._onMessage;
+  }
+
+  /** An EventEmitter to listen to suback events */
+  public get onSuback(): EventEmitter<OnSubackEvent> {
+    return this._onSuback;
   }
 
   /** An EventEmitter to listen to error events */

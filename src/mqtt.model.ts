@@ -36,3 +36,7 @@ export interface PublishOptions extends MQTT.IClientPublishOptions { }
 export interface OnConnectEvent extends MqttMessage { }
 export interface OnErrorEvent extends Error { }
 export interface OnMessageEvent extends MqttMessage { }
+export interface OnSubackEvent {
+  granted: boolean;
+  filter: string;
+}

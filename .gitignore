@@ -8,6 +8,7 @@ src/**/*.metadata.json
 *.js
 *.d.ts
 *.metadata.json
+.vscode
 coverage
 documentation
 bundles
