@@ -3,14 +3,15 @@
 This library isn't just a wrapper around MQTT.js for angular >= 2.
 It uses observables and takes care of subscription handling and message routing.
 
-**NOTE**: Since I somehow messed up the versions conflicting between angular2-mqtt and ngx-mqtt, the there is a gap between `1.4.1` to `1.8.0`.
-
 * [Description](#description)
 * [Installation](#installation)
+* [Important Note](#important-note)
+* [Run the Demo Application](#run-the-demo-application)
 * [Usage](#usage)
 * [Test](#test)
 
 ## Description
+
 ngx-mqtt is well suited for applications with many components and many subscribers.
 The problem is, if you regulary subscribe to mqtt with client libraries like `MQTT.js`, still every message is handled with an on-message-eventhandler, so you have to dispatch the received messages for yourself.
 So, if you have multiple components using mqtt in your code, you just want to only receive the messages for your local filter.
@@ -22,15 +23,40 @@ This library exposes a method `observe(filter)`, which returns an Observable. If
 
 Simply install it from npm:
 
-```sh
+``` sh
 npm install ngx-mqtt --save
 ```
 
-## Run Demo Application
-```sh
+## Important Note
+
+Since most of the opened issues here are caused by misconfiguration, please make sure your broker listens on websocket and you've configured the right port for it.
+
+mosquitto seems to be the most common broker, so here is an example configuration with websockets.
+
+    pid_file /var/run/mosquitto.pid
+
+    persistence true
+    persistence_location /var/lib/mosquitto/
+
+    log_dest file /var/log/mosquitto/mosquitto.log
+
+    listener 1883
+
+    listener 9001 127.0.0.1
+    protocol websockets
+
+    include_dir /etc/mosquitto/conf.d
+
+With this config the broker listens on `1883` for tcp connections and `9001` for websocket connections.
+
+## Run the Demo Application
+
+``` sh
 npm run serve:demo # go into demo folder, install npm dependencies and run ng serve
 ```
+
 Keep in mind, that the demo is a self contained @angular/cli application, which depends on a ngx-mqtt release and not the source code.
+
 ## Usage
 
 ``` typescript
@@ -98,6 +124,6 @@ npm run serve:docs # open a local webserver serving the documentation
 
 ## Test
 
-```
+``` sh
 npm test
 ```
