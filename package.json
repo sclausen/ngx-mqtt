@@ -1,6 +1,6 @@
 {
   "name": "ngx-mqtt",
-  "version": "1.17.0",
+  "version": "5.0.0",
   "description": "ngx mqtt client library",
   "main": "bundles/ngx-mqtt.min.js",
   "module": "./src/index.js",
@@ -33,7 +33,7 @@
   ],
   "license": "MIT",
   "peerDependencies": {
-    "@angular/core": ">=4.3.0 || >5.0.0",
+    "@angular/core": ">=5.0.0",
     "rxjs": ">=5.4.3"
   },
   "dependencies": {
@@ -41,12 +41,12 @@
   },
   "devDependencies": {
     "@angular/cli": "^1.5.0",
-    "@angular/common": "5.0.1",
-    "@angular/compiler-cli": "5.0.1",
-    "@angular/compiler": "5.0.1",
-    "@angular/core": "5.0.1",
-    "@angular/platform-browser-dynamic": "5.0.1",
-    "@angular/platform-browser": "5.0.1",
+    "@angular/common": "5.0.0",
+    "@angular/compiler-cli": "5.0.0",
+    "@angular/compiler": "5.0.0",
+    "@angular/core": "5.0.0",
+    "@angular/platform-browser-dynamic": "5.0.0",
+    "@angular/platform-browser": "5.0.0",
     "@compodoc/compodoc": "^1.0.4",
     "@types/hammerjs": "2.0.33",
     "@types/jasmine": "2.5.35",
