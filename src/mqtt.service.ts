@@ -1,4 +1,4 @@
-import { Injectable, EventEmitter } from '@angular/core';
+import { EventEmitter } from '@angular/core';
 import * as MQTT from 'mqtt';
 import * as extend from 'xtend';
 
@@ -8,9 +8,8 @@ import { Observer } from 'rxjs/Observer';
 import { UsingObservable } from 'rxjs/observable/UsingObservable';
 import { Subject } from 'rxjs/Subject';
 import { Subscription, AnonymousSubscription } from 'rxjs/Subscription';
-import 'rxjs/add/observable/merge';
-import 'rxjs/add/operator/filter';
-import 'rxjs/add/operator/publishReplay';
+import { merge } from 'rxjs/observable/merge';
+import { filter, publishReplay, refCount } from 'rxjs/operators';
 
 import {
   MqttConnectionState,
@@ -28,7 +27,6 @@ import {
  * to only subscribe to the broker once per MQTT filter.
  * It also handles proper unsubscription from the broker, if the last observable with a filter is closed.
  */
-@Injectable()
 export class MqttService {
   /** a map of all mqtt observables by filter */
   public observables: { [filter: string]: Observable<MqttMessage> } = {};
@@ -122,43 +120,45 @@ export class MqttService {
    * @param  {string}                  filter
    * @return {Observable<MqttMessage>}        the observable you can subscribe to
    */
-  public observe(filter: string): Observable<MqttMessage> {
+  public observe(filterString: string): Observable<MqttMessage> {
     if (!this.client) {
       throw new Error('mqtt client not connected');
     }
-    if (!this.observables[filter]) {
+    if (!this.observables[filterString]) {
       const rejected = new Subject();
-      this.observables[filter] = <Observable<MqttMessage>>UsingObservable
+      this.observables[filterString] = <Observable<MqttMessage>>UsingObservable
         .create(
         // resourceFactory: Do the actual ref-counting MQTT subscription.
         // refcount is decreased on unsubscribe.
         () => {
           const subscription: Subscription = new Subscription();
-          this.client.subscribe(filter, (err, granted: MQTT.ISubscriptionGrant[]) => {
+          this.client.subscribe(filterString, (err, granted: MQTT.ISubscriptionGrant[]) => {
             granted.forEach((granted_: MQTT.ISubscriptionGrant) => {
               if (granted_.qos === 128) {
                 delete this.observables[granted_.topic];
                 this.client.unsubscribe(granted_.topic);
                 rejected.error(`subscription for '${granted_.topic}' rejected!`);
               }
-              this._onSuback.emit({filter: filter, granted: granted_.qos !== 128});
+              this._onSuback.emit({filter: filterString, granted: granted_.qos !== 128});
             });
           });
           subscription.add(() => {
-            delete this.observables[filter];
-            this.client.unsubscribe(filter);
+            delete this.observables[filterString];
+            this.client.unsubscribe(filterString);
           });
           return subscription;
         },
         // observableFactory: Create the observable that is consumed from.
         // This part is not executed until the Observable returned by
         // `observe` gets actually subscribed.
-        (subscription: AnonymousSubscription) => Observable.merge(rejected, this.messages))
-        .filter((msg: MqttMessage) => MqttService.filterMatchesTopic(filter, msg.topic))
-        .publishReplay(1)
-        .refCount();
+        (subscription: AnonymousSubscription) => merge(rejected, this.messages))
+        .pipe(
+          filter((msg: MqttMessage) => MqttService.filterMatchesTopic(filterString, msg.topic)),
+          publishReplay(1),
+          refCount()
+        );
     }
-    return this.observables[filter];
+    return this.observables[filterString];
   }
 
   /**
