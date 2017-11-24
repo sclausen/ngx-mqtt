@@ -1,6 +1,6 @@
 {
   "name": "ngx-mqtt",
-  "version": "5.0.0",
+  "version": "5.0.1",
   "description": "ngx mqtt client library",
   "main": "bundles/ngx-mqtt.min.js",
   "module": "./src/index.js",
@@ -34,10 +34,12 @@
   "license": "MIT",
   "peerDependencies": {
     "@angular/core": ">=5.0.0",
-    "rxjs": ">=5.4.3"
+    "rxjs": ">=5.4.3",
+    "handlebars": "^4.0.11"
   },
   "dependencies": {
-    "mqtt": "2.14.0"
+    "mqtt": "2.14.0",
+    "@types/node": "^6.0.45"
   },
   "devDependencies": {
     "@angular/cli": "^1.5.0",
