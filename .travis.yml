@@ -5,7 +5,9 @@ node_js:
   - 6
 script:
   npm test
-
+branches:
+  only:
+  - master
 before_install:
   - export CHROME_BIN=chromium-browser
 
