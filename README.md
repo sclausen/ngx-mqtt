@@ -1,5 +1,14 @@
 # angular2-mqtt [![npm version](https://badge.fury.io/js/angular2-mqtt.svg)](https://badge.fury.io/js/angular2-mqtt)
 
+# THIS PACKAGE IS DEPRECATED
+
+This package has been renamend and development continued under the name
+[ngx-mqtt](https://github.com/sclausen/ngx-mqtt)
+
+
+
+---
+
 This library isn't just a wrapper around MQTT.js for angular2.
 It uses observables and takes care of subscription handling and message routing.
 

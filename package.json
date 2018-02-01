@@ -1,6 +1,6 @@
 {
   "name": "angular2-mqtt",
-  "version": "1.7.1",
+  "version": "1.7.2",
   "description": "angular2 mqtt client library",
   "main": "bundles/angular2-mqtt.min.js",
   "module": "index.js",
