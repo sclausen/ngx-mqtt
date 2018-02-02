@@ -1,7 +1,7 @@
-import { NgModule, ModuleWithProviders } from '@angular/core';
+import {ModuleWithProviders, NgModule} from '@angular/core';
 
-import { MqttService }                   from './mqtt.service';
-import { MqttServiceOptions }            from './mqtt.model';
+import {MqttServiceOptions} from './mqtt.model';
+import {MqttService} from './mqtt.service';
 
 export * from './mqtt.service';
 export * from './mqtt.model';
@@ -23,9 +23,6 @@ export class MqttModule {
     provide: MqttService,
     useFactory: mqttServiceFactory
   }): ModuleWithProviders {
-    return {
-      ngModule: MqttModule,
-      providers: [providedService]
-    };
+    return {ngModule: MqttModule, providers: [providedService]};
   }
 }

@@ -16,7 +16,12 @@ export interface MqttServiceOptions extends MQTT.IClientOptions {
   port?: number;
   /** the path parameters to connect to e.g. `/mqtt` */
   path?: string;
-  protocol?: 'wss' | 'ws';
+  /** the protocol to use to web sockets secure or web sockets */
+  protocol?: 'wss'|'ws';
+  /** The username to use for the mqtt broker */
+  username?: string;
+  /** The password to use for the mqtt broker */
+  password?: string;
 }
 
 export interface MqttMessage extends MQTT.IPacket {
@@ -32,10 +37,10 @@ export interface MqttMessage extends MQTT.IPacket {
   dup: boolean;
 }
 
-export interface PublishOptions extends MQTT.IClientPublishOptions { }
-export interface OnConnectEvent extends MqttMessage { }
-export interface OnErrorEvent extends Error { }
-export interface OnMessageEvent extends MqttMessage { }
+export interface PublishOptions extends MQTT.IClientPublishOptions {}
+export interface OnConnectEvent extends MqttMessage {}
+export interface OnErrorEvent extends Error {}
+export interface OnMessageEvent extends MqttMessage {}
 export interface OnSubackEvent {
   granted: boolean;
   filter: string;
