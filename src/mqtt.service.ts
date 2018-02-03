@@ -76,16 +76,19 @@ export class MqttService {
     const path = options.path || '/';
     this._url = `${protocol}://${hostname}:${port}/${path}`;
     this.state.next(MqttConnectionState.CONNECTING);
+    const mergedOptions = extend({
+      clientId: this._clientId,
+      keepalive: this._keepalive,
+      reconnectPeriod: this._reconnectPeriod,
+      connectTimeout: this._connectTimeout
+    }, options);
+
     if (!client) {
-      this.client = MQTT.connect(this._url, extend({
-        clientId: this._clientId,
-        keepalive: this._keepalive,
-        reconnectPeriod: this._reconnectPeriod,
-        connectTimeout: this._connectTimeout
-      }, options));
+      this.client = MQTT.connect(this._url, mergedOptions);
     } else {
       this.client = client;
     }
+    this._clientId = mergedOptions.clientId;
 
     this.client.on('connect', this._handleOnConnect);
     this.client.on('close', this._handleOnClose);
