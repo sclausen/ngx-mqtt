@@ -1,6 +1,6 @@
 {
   "name": "ngx-mqtt",
-  "version": "5.0.7",
+  "version": "5.0.8",
   "description": "ngx mqtt client library",
   "main": "bundles/ngx-mqtt.min.js",
   "module": "./src/index.js",
@@ -10,7 +10,6 @@
     "test": "karma start",
     "build": "node clean && ngc && webpack",
     "docs": "compodoc src -p tsconfig.json",
-    "serve:demo": "cd demo && npm i && ng serve",
     "serve:docs": "http-server documentation",
     "prepare": "node clean && ngc && webpack"
   },
