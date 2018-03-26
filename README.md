@@ -65,10 +65,11 @@ import { Observable } from 'rxjs/Observable';
 import {
   MqttMessage,
   MqttModule,
-  MqttService
+  MqttService,
+  MqttServiceOptions
 } from 'ngx-mqtt';
 
-export const MQTT_SERVICE_OPTIONS = {
+export const MQTT_SERVICE_OPTIONS: MqttServiceOptions = {
   hostname: 'localhost',
   port: 9001,
   path: '/mqtt'
