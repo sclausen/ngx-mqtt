@@ -6,7 +6,6 @@ It uses observables and takes care of subscription handling and message routing.
 * [Description](#description)
 * [Installation](#installation)
 * [Important Note](#important-note)
-* [Run the Demo Application](#run-the-demo-application)
 * [Usage](#usage)
 * [Test](#test)
 
@@ -48,14 +47,6 @@ mosquitto seems to be the most common broker, so here is an example configuratio
     include_dir /etc/mosquitto/conf.d
 
 With this config the broker listens on `1883` for tcp connections and `9001` for websocket connections.
-
-## Run the Demo Application
-
-``` sh
-npm run serve:demo # go into demo folder, install npm dependencies and run ng serve
-```
-
-Keep in mind, that the demo is a self contained @angular/cli application, which depends on a ngx-mqtt release and not the source code.
 
 ## Usage
 

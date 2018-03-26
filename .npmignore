@@ -1,6 +1,5 @@
 config
 documentation
-demo
 coverage
 node_modules
 index.html
