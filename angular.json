@@ -1,0 +1,44 @@
+{
+  "$schema": "./node_modules/@angular-devkit/core/src/workspace/workspace-schema.json",
+  "version": 1,
+  "newProjectRoot": "projects",
+  "projects": {
+    "ngx-mqtt": {
+      "root": "projects/ngx-mqtt",
+      "projectType": "library",
+      "architect": {
+        "build": {
+          "builder": "@angular-devkit/build-ng-packagr:build",
+          "options": {
+            "project": "projects/ngx-mqtt/ng-package.json"
+          },
+          "configurations": {
+            "production": {
+              "project": "projects/ngx-mqtt/ng-package.prod.json"
+            }
+          }
+        },
+        "test": {
+          "builder": "@angular-devkit/build-angular:karma",
+          "options": {
+            "main": "projects/ngx-mqtt/src/test.ts",
+            "tsConfig": "projects/ngx-mqtt/tsconfig.spec.json",
+            "karmaConfig": "projects/ngx-mqtt/karma.conf.js"
+          }
+        },
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": [
+              "projects/ngx-mqtt/tsconfig.lint.json",
+              "projects/ngx-mqtt/tsconfig.spec.json"
+            ],
+            "exclude": [
+              "**/node_modules/**"
+            ]
+          }
+        }
+      }
+    }
+  }
+}
