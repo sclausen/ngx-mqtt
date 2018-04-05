@@ -1,0 +1,35 @@
+{
+  "name": "ngx-mqtt",
+  "version": "6.0.0",
+  "description": "ngx mqtt client library",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sclausen/ngx-mqtt.git"
+  },
+  "keywords": [
+    "angular",
+    "angular5",
+    "angular6",
+    "mqtt"
+  ],
+  "author": {
+    "name": "sclausen"
+  },
+  "contributors": [
+    {
+      "name": "lpeterse"
+    },
+    {
+      "name": "chrste90"
+    }
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "mqtt": "2.17.0"
+  },
+  "peerDependencies": {
+    "@angular/core": "^6.0.0-rc.3 || ^6.0.0",
+    "rxjs": "^6.0.0-tactical-rc.1 || ^6.0.0",
+    "handlebars": "^4.0.11"
+  }
+}

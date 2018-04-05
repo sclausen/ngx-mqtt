@@ -1,15 +1,17 @@
 import { EventEmitter } from '@angular/core';
-import { connect, ISubscriptionGrant } from 'mqtt';
-import * as extend from 'xtend';
-
-import { BehaviorSubject } from 'rxjs/BehaviorSubject';
-import { Observable } from 'rxjs/Observable';
-import { Observer } from 'rxjs/Observer';
-import { UsingObservable } from 'rxjs/observable/UsingObservable';
-import { Subject } from 'rxjs/Subject';
-import { Subscription, AnonymousSubscription } from 'rxjs/Subscription';
-import { merge } from 'rxjs/observable/merge';
+import {
+  BehaviorSubject,
+  Observable,
+  Observer,
+  merge,
+  Subscription,
+  Subject,
+  Unsubscribable,
+  using } from 'rxjs';
 import { filter, publish, refCount } from 'rxjs/operators';
+
+import { connect, ISubscriptionGrant, MqttClient } from 'mqtt';
+const extend = require('extend');
 
 import {
   IMqttClient,
@@ -22,12 +24,8 @@ import {
   IOnSubackEvent,
   IPublishOptions
 } from './mqtt.model';
+import { MqttModule } from './mqtt.module';
 
-/**
- * With an instance of MqttService, you can observe and subscribe to MQTT in multiple places, e.g. in different components,
- * to only subscribe to the broker once per MQTT filter.
- * It also handles proper unsubscription from the broker, if the last observable with a filter is closed.
- */
 export class MqttService {
   /** a map of all mqtt observables by filter */
   public observables: { [filter: string]: Observable<IMqttMessage> } = {};
@@ -89,7 +87,7 @@ export class MqttService {
     }
 
     if (!client) {
-      this.client = <IMqttClient>connect(this._url, mergedOptions);
+      this.client = connect(this._url, mergedOptions) as IMqttClient;
     } else {
       this.client = client;
     }
@@ -126,8 +124,8 @@ export class MqttService {
    * The observable will only emit messages matching the filter.
    * The first one subscribing to the resulting observable executes a mqtt subscribe.
    * The last one unsubscribing this filter executes a mqtt unsubscribe.
-   * @param  {string}                  filter
-   * @return {Observable<IMqttMessage>}        the observable you can subscribe to
+   * @param filter
+   * @return the observable you can subscribe to
    */
   public observe(filterString: string): Observable<IMqttMessage> {
     if (!this.client) {
@@ -135,32 +133,32 @@ export class MqttService {
     }
     if (!this.observables[filterString]) {
       const rejected = new Subject();
-      this.observables[filterString] = <Observable<IMqttMessage>>UsingObservable
-        .create(
-          // resourceFactory: Do the actual ref-counting MQTT subscription.
-          // refcount is decreased on unsubscribe.
-          () => {
-            const subscription: Subscription = new Subscription();
-            this.client.subscribe(filterString, (err, granted: ISubscriptionGrant[]) => {
-              granted.forEach((granted_: ISubscriptionGrant) => {
-                if (granted_.qos === 128) {
-                  delete this.observables[granted_.topic];
-                  this.client.unsubscribe(granted_.topic);
-                  rejected.error(`subscription for '${granted_.topic}' rejected!`);
-                }
-                this._onSuback.emit({ filter: filterString, granted: granted_.qos !== 128 });
-              });
+      this.observables[filterString] = <Observable<IMqttMessage>>
+        using(
+        // resourceFactory: Do the actual ref-counting MQTT subscription.
+        // refcount is decreased on unsubscribe.
+        () => {
+          const subscription: Subscription = new Subscription();
+          this.client.subscribe(filterString, (err, granted: ISubscriptionGrant[]) => {
+            granted.forEach((granted_: ISubscriptionGrant) => {
+              if (granted_.qos === 128) {
+                delete this.observables[granted_.topic];
+                this.client.unsubscribe(granted_.topic);
+                rejected.error(`subscription for '${granted_.topic}' rejected!`);
+              }
+              this._onSuback.emit({filter: filterString, granted: granted_.qos !== 128});
             });
-            subscription.add(() => {
-              delete this.observables[filterString];
-              this.client.unsubscribe(filterString);
-            });
-            return subscription;
-          },
-          // observableFactory: Create the observable that is consumed from.
-          // This part is not executed until the Observable returned by
-          // `observe` gets actually subscribed.
-          (subscription: AnonymousSubscription) => merge(rejected, this.messages))
+          });
+          subscription.add(() => {
+            delete this.observables[filterString];
+            this.client.unsubscribe(filterString);
+          });
+          return subscription;
+        },
+        // observableFactory: Create the observable that is consumed from.
+        // This part is not executed until the Observable returned by
+        // `observe` gets actually subscribed.
+        (subscription: Unsubscribable) => merge(rejected, this.messages))
         .pipe(
           filter((msg: IMqttMessage) => MqttService.filterMatchesTopic(filterString, msg.topic)),
           publish(),
@@ -174,10 +172,10 @@ export class MqttService {
    * This method publishes a message for a topic with optional options.
    * The returned observable will complete, if publishing was successful
    * and will throw an error, if the publication fails
-   * @param  {string}           topic
-   * @param  {any}              message
-   * @param  {PublishOptions}   options
-   * @return {Observable<void>}
+   * @param  topic
+   * @param  message
+   * @param  options
+   * @return
    */
   public publish(topic: string, message: any, options?: IPublishOptions): Observable<void> {
     if (!this.client) {
@@ -198,9 +196,9 @@ export class MqttService {
   /**
    * This method publishes a message for a topic with optional options.
    * If an error occurs, it will throw.
-   * @param  {string}           topic
-   * @param  {any}              message
-   * @param  {PublishOptions}   options
+   * @param  topic
+   * @param  message
+   * @param  options
    */
   public unsafePublish(topic: string, message: any, options?: IPublishOptions): void {
     if (!this.client) {
@@ -218,9 +216,9 @@ export class MqttService {
    * topic matches a given filter. The matching rules are specified in the MQTT
    * standard documentation and in the library test suite.
    *
-   * @param  {string}  filter A filter may contain wildcards like '#' and '+'.
-   * @param  {string}  topic  A topic may not contain wildcards.
-   * @return {boolean}        true on match and false otherwise.
+   * @param  filter A filter may contain wildcards like '#' and '+'.
+   * @param  topic  A topic may not contain wildcards.
+   * @return true on match and false otherwise.
    */
   public static filterMatchesTopic(filter: string, topic: string): boolean {
     if (filter[0] === '#' && topic[0] === '$') {

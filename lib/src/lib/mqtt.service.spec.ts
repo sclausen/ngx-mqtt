@@ -1,4 +1,4 @@
-import { MqttService } from '../src/index';
+import { MqttService } from './mqtt.service';
 
 describe('MqttService', () => {
   it('is defined', () => {
