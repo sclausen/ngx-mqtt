@@ -7,8 +7,9 @@ import {
   Subscription,
   Subject,
   Unsubscribable,
-  using } from 'rxjs';
-import { filter, publishReplay, refCount } from 'rxjs/operators';
+  using
+} from 'rxjs';
+import { filter as filterOperator, publishReplay, refCount } from 'rxjs/operators';
 
 import { connect, ISubscriptionGrant, MqttClient } from 'mqtt';
 const extend = require('extend');
@@ -37,7 +38,7 @@ export class MqttService {
   private _keepalive = 10;
   private _connectTimeout = 10000;
   private _reconnectPeriod = 10000;
-  private _url: string;
+  private _url: string | undefined = undefined;
 
   private _onConnect: EventEmitter<OnConnectEvent> = new EventEmitter<OnConnectEvent>();
   private _onClose: EventEmitter<void> = new EventEmitter<void>();
@@ -45,6 +46,42 @@ export class MqttService {
   private _onReconnect: EventEmitter<void> = new EventEmitter<void>();
   private _onMessage: EventEmitter<OnMessageEvent> = new EventEmitter<OnMessageEvent>();
   private _onSuback: EventEmitter<OnSubackEvent> = new EventEmitter<OnSubackEvent>();
+
+  /**
+ * This static method shall be used to determine whether a MQTT
+ * topic matches a given filter. The matching rules are specified in the MQTT
+ * standard documentation and in the library test suite.
+ *
+ * @param  filter A filter may contain wildcards like '#' and '+'.
+ * @param  topic  A topic may not contain wildcards.
+ * @return true on match and false otherwise.
+ */
+  public static filterMatchesTopic(filter: string, topic: string): boolean {
+    if (filter[0] === '#' && topic[0] === '$') {
+      return false;
+    }
+    // Preparation: split and reverse on '/'. The JavaScript split function is sane.
+    const fs = (filter || '').split('/').reverse();
+    const ts = (topic || '').split('/').reverse();
+    // This function is tail recursive and compares both arrays one element at a time.
+    const match = (): boolean => {
+      // Cutting of the last element of both the filter and the topic using pop().
+      const f = fs.pop();
+      const t = ts.pop();
+      switch (f) {
+        // In case the filter level is '#', this is a match no matter whether
+        // the topic is undefined on this level or not ('#' matches parent element as well!).
+        case '#': return true;
+        // In case the filter level is '+', we shall dive into the recursion only if t is not undefined.
+        case '+': return t ? match() : false;
+        // In all other cases the filter level must match the topic level,
+        // both must be defined and the filter tail must match the topic
+        // tail (which is determined by the recursive call of match()).
+        default: return f === t && (f === undefined ? true : match());
+      }
+    };
+    return match();
+  }
 
   /**
    * The constructor needs [connection options]{@link MqttServiceOptions} regarding the broker and some
@@ -126,38 +163,41 @@ export class MqttService {
       throw new Error('mqtt client not connected');
     }
     if (!this.observables[filterString]) {
-      const rejected = new Subject();
-      this.observables[filterString] = <Observable<MqttMessage>>
+      const rejected: Subject<MqttMessage> = new Subject();
+      this.observables[filterString] =
         using(
-        // resourceFactory: Do the actual ref-counting MQTT subscription.
-        // refcount is decreased on unsubscribe.
-        () => {
-          const subscription: Subscription = new Subscription();
-          this.client.subscribe(filterString, (err, granted: ISubscriptionGrant[]) => {
-            granted.forEach((granted_: ISubscriptionGrant) => {
-              if (granted_.qos === 128) {
-                delete this.observables[granted_.topic];
-                this.client.unsubscribe(granted_.topic);
-                rejected.error(`subscription for '${granted_.topic}' rejected!`);
-              }
-              this._onSuback.emit({filter: filterString, granted: granted_.qos !== 128});
+          // resourceFactory: Do the actual ref-counting MQTT subscription.
+          // refcount is decreased on unsubscribe.
+          () => {
+            const subscription: Subscription = new Subscription();
+            // tslint:disable-next-line:no-non-null-assertion
+            this.client!.subscribe(filterString, (err, granted: ISubscriptionGrant[]) => {
+              granted.forEach((granted_: ISubscriptionGrant) => {
+                if (granted_.qos === 128) {
+                  delete this.observables[granted_.topic];
+                  // tslint:disable-next-line:no-non-null-assertion
+                  this.client!.unsubscribe(granted_.topic);
+                  rejected.error(`subscription for '${granted_.topic}' rejected!`);
+                }
+                this._onSuback.emit({ filter: filterString, granted: granted_.qos !== 128 });
+              });
             });
-          });
-          subscription.add(() => {
-            delete this.observables[filterString];
-            this.client.unsubscribe(filterString);
-          });
-          return subscription;
-        },
-        // observableFactory: Create the observable that is consumed from.
-        // This part is not executed until the Observable returned by
-        // `observe` gets actually subscribed.
-        (subscription: Unsubscribable) => merge(rejected, this.messages))
-        .pipe(
-          filter((msg: MqttMessage) => MqttService.filterMatchesTopic(filterString, msg.topic)),
+            subscription.add(() => {
+              delete this.observables[filterString];
+              // tslint:disable-next-line:no-non-null-assertion
+              this.client!.unsubscribe(filterString);
+            });
+            return subscription;
+          },
+          // observableFactory: Create the observable that is consumed from.
+          // This part is not executed until the Observable returned by
+          // `observe` gets actually subscribed.
+          (subscription: Unsubscribable | void) => merge(rejected, this.messages)
+        ).pipe(
+          filterOperator((msg: MqttMessage) => MqttService.filterMatchesTopic(filterString, msg.topic)),
           publishReplay(1),
           refCount()
-        );
+        ) as Observable<MqttMessage>;
     }
     return this.observables[filterString];
   }
@@ -176,7 +216,8 @@ export class MqttService {
       throw new Error('mqtt client not connected');
     }
     const source = Observable.create((obs: Observer<void>) => {
-      this.client.publish(topic, message, options, (err: Error) => {
+      // tslint:disable-next-line:no-non-null-assertion
+      this.client!.publish(topic, message, options!, (err?: Error) => {
         if (err) {
           obs.error(err);
         } else {
@@ -198,49 +239,13 @@ export class MqttService {
     if (!this.client) {
       throw new Error('mqtt client not connected');
     }
-    this.client.publish(topic, message, options, (err: Error) => {
+    // tslint:disable-next-line:no-non-null-assertion
+    this.client.publish(topic, message, options!, (err?: Error) => {
       if (err) {
         throw (err);
       }
     });
   }
-
-  /**
-   * This static method shall be used to determine whether a MQTT
-   * topic matches a given filter. The matching rules are specified in the MQTT
-   * standard documentation and in the library test suite.
-   *
-   * @param  filter A filter may contain wildcards like '#' and '+'.
-   * @param  topic  A topic may not contain wildcards.
-   * @return true on match and false otherwise.
-   */
-  public static filterMatchesTopic(filter: string, topic: string): boolean {
-    if (filter[0] === '#' && topic[0] === '$') {
-      return false;
-    }
-    // Preparation: split and reverse on '/'. The JavaScript split function is sane.
-    const fs = (filter || '').split('/').reverse();
-    const ts = (topic || '').split('/').reverse();
-    // This function is tail recursive and compares both arrays one element at a time.
-    const match = (): boolean => {
-      // Cutting of the last element of both the filter and the topic using pop().
-      const f = fs.pop();
-      const t = ts.pop();
-      switch (f) {
-        // In case the filter level is '#', this is a match no matter whether
-        // the topic is undefined on this level or not ('#' matches parent element as well!).
-        case '#': return true;
-        // In case the filter level is '+', we shall dive into the recursion only if t is not undefined.
-        case '+': return t ? match() : false;
-        // In all other cases the filter level must match the topic level,
-        // both must be defined and the filter tail must match the topic
-        // tail (which is determined by the recursive call of match()).
-        default: return f === t && (f === undefined ? true : match());
-      }
-    };
-    return match();
-  }
-
 
   /** An EventEmitter to listen to close messages */
   public get onClose(): EventEmitter<void> {
@@ -279,7 +284,8 @@ export class MqttService {
 
   private _handleOnConnect = (e: OnConnectEvent) => {
     Object.keys(this.observables).forEach((filter: string) => {
-      this.client.subscribe(filter);
+      // tslint:disable-next-line:no-non-null-assertion
+      this.client!.subscribe(filter);
     });
     this.state.next(MqttConnectionState.CONNECTED);
     this._onConnect.emit(e);
@@ -287,7 +293,8 @@ export class MqttService {
 
   private _handleOnReconnect = () => {
     Object.keys(this.observables).forEach((filter: string) => {
-      this.client.subscribe(filter);
+      // tslint:disable-next-line:no-non-null-assertion
+      this.client!.subscribe(filter);
     });
     this.state.next(MqttConnectionState.CONNECTING);
     this._onReconnect.emit();
@@ -298,7 +305,7 @@ export class MqttService {
     console.error(e);
   }
 
-  private _handleOnMessage = (topic, msg, packet) => {
+  private _handleOnMessage = (topic: any, msg: any, packet: any) => {
     this._onMessage.emit(packet);
     if (packet.cmd === 'publish') {
       this.messages.next(packet);

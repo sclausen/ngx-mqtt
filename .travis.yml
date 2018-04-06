@@ -3,7 +3,8 @@ sudo: false
 node_js:
   - 8
 script:
-  npm test
+  - npm run lint
+  - npm test
 branches:
   only:
   - master

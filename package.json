@@ -6,9 +6,12 @@
   "module": "./src/index.js",
   "typings": "./src/index.d.ts",
   "scripts": {
-    "clean": "node clean",
-    "test": "ng test",
+    "ng": "ng",
+    "start": "ng serve",
     "build": "ng build",
+    "test": "ng test",
+    "lint": "ng lint",
+    "e2e": "ng e2e",
     "docs": "compodoc projects/ngx-mqtt/src -p tsconfig.json",
     "serve:docs": "http-server documentation"
   },

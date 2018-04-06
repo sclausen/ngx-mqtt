@@ -1,4 +1,4 @@
-import * as MQTT from 'mqtt';
+import { IClientOptions, IClientPublishOptions, IPacket } from 'mqtt';
 
 export enum MqttConnectionState {
   CLOSED,
@@ -6,7 +6,7 @@ export enum MqttConnectionState {
   CONNECTED
 }
 
-export interface MqttServiceOptions extends MQTT.IClientOptions {
+export interface MqttServiceOptions extends IClientOptions {
   /** wether a new connection should be created
    *  on creating an instance of the service */
   connectOnCreate?: boolean;
@@ -19,7 +19,7 @@ export interface MqttServiceOptions extends MQTT.IClientOptions {
   protocol?: 'wss' | 'ws';
 }
 
-export interface MqttMessage extends MQTT.IPacket {
+export interface MqttMessage extends IPacket {
   /** the mqtt topic to which this message was published to */
   topic: string;
   /** the payload */
@@ -32,9 +32,13 @@ export interface MqttMessage extends MQTT.IPacket {
   dup: boolean;
 }
 
-export interface PublishOptions extends MQTT.IClientPublishOptions { }
+// tslint:disable-next-line:no-empty-interface
+export interface PublishOptions extends IClientPublishOptions { }
+// tslint:disable-next-line:no-empty-interface
 export interface OnConnectEvent extends MqttMessage { }
+// tslint:disable-next-line:no-empty-interface
 export interface OnErrorEvent extends Error { }
+// tslint:disable-next-line:no-empty-interface
 export interface OnMessageEvent extends MqttMessage { }
 export interface OnSubackEvent {
   granted: boolean;
