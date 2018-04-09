@@ -3,10 +3,9 @@ PLEASE HELP US PROCESS GITHUB ISSUES FASTER BY PROVIDING THE FOLLOWING INFORMATI
 
 ISSUES MISSING IMPORTANT INFORMATION MAY BE CLOSED WITHOUT INVESTIGATION.
 -->
-
+- [ ] **I have searched for similar issues in this repository, but couldn't find one.**
 ## I'm submitting a...
 <!-- Check one of the following options with "x" -->
-- [ ] **I have searched for similar issues in this repository, but couldn't find one.**
 - [ ] Regression (a behavior that used to work and stopped working in a new release)
 - [ ] Bug report  <!-- Please search GitHub for a similar issue or PR before submitting -->
 - [ ] Feature request
