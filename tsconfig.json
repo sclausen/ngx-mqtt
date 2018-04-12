@@ -1,28 +1,21 @@
 {
+  "compileOnSave": false,
   "compilerOptions": {
-    "module": "es2015",
-    "target": "es5",
+    "baseUrl": "./",
+    "outDir": "./dist/out-tsc",
+    "sourceMap": true,
+    "declaration": false,
+    "moduleResolution": "node",
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
-    "declaration": true,
-    "sourceMap": true,
-    "moduleResolution": "node",
+    "strict": true,
+    "target": "es5",
+    "typeRoots": [
+      "node_modules/@types"
+    ],
     "lib": [
       "es2017",
       "dom"
-    ],
-    "typeRoots": [
-      "node_modules/@types"
     ]
-  },
-  "files": [
-    "./src/index.ts",
-    "./src/mqtt.model.ts",
-    "./src/mqtt.service.ts",
-    "./tests/mqtt.service.spec.ts"
-  ],
-  "angularCompilerOptions": {
-    "strictMetadataEmit": true,
-    "skipTemplateCodegen": true
   }
 }
