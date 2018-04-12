@@ -21,7 +21,7 @@ ISSUES MISSING IMPORTANT INFORMATION MAY BE CLOSED WITHOUT INVESTIGATION.
 
 ## Minimal reproduction of the problem with instructions
 <!--
-For bug reports please provide a *MINIMAL DEMO* of the problem at https://stackblitz.com/ or a separated github repository.
+For bug reports please provide a *MINIMAL DEMO* of the problem at https://codesandbox.io or https://stackblitz.com/ or a separated github repository.
 -->
 
 ## What is the motivation / use case for changing the behavior?
