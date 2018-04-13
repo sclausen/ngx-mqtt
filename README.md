@@ -86,21 +86,24 @@ export class AppModule { }
 @Component({
   template: `
     <h1>{{mesage}}</h1>
-    <h1>{{(myOtherMessage$ | async)?.payload.toString()}}</h1>
   `
 })
-export class ExampleComponent {
-  public myOtherMessage$: Observable<MqttMessage>;
+export class ExampleComponent implements OnDestroy {
+  private subscription: Subscription;
+  public message: string;
 
   constructor(private _mqttService: MqttService) {
-    this._mqttService.observe('my/topic').subscribe((message: MqttMessage) => {
-      this.myMessage = message.payload.toString();
+    this.subscription = this._mqttService.observe('my/topic').subscribe((message: MqttMessage) => {
+      this.message = message.payload.toString();
     });
-    this.myOtherMessage$ = this._mqttService.observe('my/other/topic');
   }
 
   public unsafePublish(topic: string, message: string): void {
     this._mqttService.unsafePublish(topic, message, {qos: 1, retain: true});
+  }
+  
+  public ngOnDestroy() {
+    this.subscription.unsubscribe();
   }
 }
 ```
