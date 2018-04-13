@@ -1,4 +1,5 @@
 import * as MQTT from 'mqtt';
+import { Stream } from 'stream';
 
 export enum MqttConnectionState {
   CLOSED,
@@ -39,4 +40,8 @@ export interface OnMessageEvent extends MqttMessage { }
 export interface OnSubackEvent {
   granted: boolean;
   filter: string;
+}
+
+export interface MqttClient extends MQTT.Client {
+  stream: Stream;
 }
