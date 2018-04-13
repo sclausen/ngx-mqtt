@@ -12,6 +12,7 @@ import { merge } from 'rxjs/observable/merge';
 import { filter, publishReplay, refCount } from 'rxjs/operators';
 
 import {
+  MqttClient,
   MqttConnectionState,
   MqttMessage,
   MqttServiceOptions,
@@ -53,9 +54,9 @@ export class MqttService {
    * options to configure behavior of this service, like if the connection to the broker
    * should be established on creation of this service or not.
    * @param options connection and creation options for MQTT.js and this service
-   * @param client an instance of MQTT.Client
+   * @param client an instance of MqttClient
    */
-  constructor(private options: MqttServiceOptions, private client?: MQTT.Client) {
+  constructor(private options: MqttServiceOptions, private client?: MqttClient) {
     if (options.connectOnCreate !== false) {
       this.connect({}, client);
     }
@@ -66,9 +67,9 @@ export class MqttService {
   /**
    * connect manually connects to the mqtt broker.
    * @param opts the connection options
-   * @param client an optional MQTT.Client
+   * @param client an optional MqttClient
    */
-  public connect(opts?: MqttServiceOptions, client?: MQTT.Client) {
+  public connect(opts?: MqttServiceOptions, client?: MqttClient) {
     const options = extend(this.options || {}, opts);
     const protocol = options.protocol || 'ws';
     const hostname = options.hostname || 'localhost';
@@ -84,7 +85,7 @@ export class MqttService {
     }, options);
 
     if (!client) {
-      this.client = MQTT.connect(this._url, mergedOptions);
+      this.client = <MqttClient>MQTT.connect(this._url, mergedOptions);
     } else {
       this.client = client;
     }
@@ -93,6 +94,7 @@ export class MqttService {
     this.client.on('connect', this._handleOnConnect);
     this.client.on('close', this._handleOnClose);
     this.client.on('error', this._handleOnError);
+    this.client.stream.on('error', this._handleOnError);
     this.client.on('reconnect', this._handleOnReconnect);
     this.client.on('message', this._handleOnMessage);
   }

@@ -1,6 +1,6 @@
 {
   "name": "ngx-mqtt",
-  "version": "5.0.8",
+  "version": "5.1.0",
   "description": "ngx mqtt client library",
   "main": "bundles/ngx-mqtt.min.js",
   "module": "./src/index.js",
