@@ -4,6 +4,7 @@ PLEASE HELP US PROCESS GITHUB ISSUES FASTER BY PROVIDING THE FOLLOWING INFORMATI
 ISSUES MISSING IMPORTANT INFORMATION MAY BE CLOSED WITHOUT INVESTIGATION.
 -->
 - [ ] **I have searched for similar issues in this repository, but couldn't find one.**
+- [ ] **I have read the README and have a basic understanding how angular works.**
 ## I'm submitting a...
 <!-- Check one of the following options with "x" -->
 - [ ] Regression (a behavior that used to work and stopped working in a new release)
