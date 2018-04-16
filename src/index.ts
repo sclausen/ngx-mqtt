@@ -1,12 +1,12 @@
 import { NgModule, ModuleWithProviders } from '@angular/core';
 
 import { MqttService }                   from './mqtt.service';
-import { MqttServiceOptions }            from './mqtt.model';
+import { IMqttServiceOptions }           from './mqtt.model';
 
 export * from './mqtt.service';
 export * from './mqtt.model';
 
-export const MQTT_SERVICE_OPTIONS: MqttServiceOptions = {
+export const MQTT_SERVICE_OPTIONS: IMqttServiceOptions = {
   connectOnCreate: true,
   hostname: 'localhost',
   port: 1884,
