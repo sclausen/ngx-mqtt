@@ -9,7 +9,7 @@ import { UsingObservable } from 'rxjs/observable/UsingObservable';
 import { Subject } from 'rxjs/Subject';
 import { Subscription, AnonymousSubscription } from 'rxjs/Subscription';
 import { merge } from 'rxjs/observable/merge';
-import { filter, publishReplay, refCount } from 'rxjs/operators';
+import { filter, refCount } from 'rxjs/operators';
 
 import {
   IMqttClient,
@@ -163,7 +163,6 @@ export class MqttService {
           (subscription: AnonymousSubscription) => merge(rejected, this.messages))
         .pipe(
           filter((msg: IMqttMessage) => MqttService.filterMatchesTopic(filterString, msg.topic)),
-          publishReplay(1),
           refCount()
         );
     }
