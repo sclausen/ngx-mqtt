@@ -54,7 +54,7 @@ With this config the broker listens on `1883` for tcp connections and `9001` for
 import { Observable } from 'rxjs/Observable';
 
 import {
-  MqttMessage,
+  IMqttMessage,
   MqttModule,
   MqttService,
   IMqttServiceOptions
@@ -93,7 +93,7 @@ export class ExampleComponent implements OnDestroy {
   public message: string;
 
   constructor(private _mqttService: MqttService) {
-    this.subscription = this._mqttService.observe('my/topic').subscribe((message: MqttMessage) => {
+    this.subscription = this._mqttService.observe('my/topic').subscribe((message: IMqttMessage) => {
       this.message = message.payload.toString();
     });
   }
