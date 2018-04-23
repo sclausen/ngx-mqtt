@@ -4,11 +4,10 @@ import {
   InjectionToken
 } from '@angular/core';
 import { MqttService } from './mqtt.service';
-import { IMqttServiceOptions } from './mqtt.model';
+import { IMqttClient, IMqttServiceOptions } from './mqtt.model';
 
 export * from './mqtt.service';
 export * from './mqtt.model';
-import { MqttClient } from 'mqtt';
 
 export const MQTT_SERVICE_OPTIONS: IMqttServiceOptions = {
   connectOnCreate: true,
@@ -17,19 +16,24 @@ export const MQTT_SERVICE_OPTIONS: IMqttServiceOptions = {
   path: ''
 };
 
-export function mqttServiceFactory() {
-  return new MqttService(MQTT_SERVICE_OPTIONS);
-}
+export const MqttServiceConfig = new InjectionToken<IMqttServiceOptions>('NgxMqttServiceConfig');
+export const MqttClientService = new InjectionToken<IMqttClient>('NgxMqttClientService');
 
 @NgModule()
 export class MqttModule {
-  static forRoot(providedService: any = {
-    provide: MqttService,
-    useFactory: mqttServiceFactory
-  }): ModuleWithProviders {
+  static forRoot(config: IMqttServiceOptions, client?: IMqttClient): ModuleWithProviders {
     return {
       ngModule: MqttModule,
-      providers: [providedService]
+      providers: [
+        {
+          provide: MqttServiceConfig,
+          useValue: config
+        },
+        {
+          provide: MqttClientService,
+          useValue: client
+        }
+      ]
     };
   }
 }

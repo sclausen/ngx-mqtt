@@ -1,4 +1,3 @@
-import { inject, TestBed } from '@angular/core/testing';
 import { MqttService } from '../src/mqtt.service';
 
 describe('MqttService', () => {
