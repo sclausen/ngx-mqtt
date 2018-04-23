@@ -1,10 +1,7 @@
 import { NgModule, ModuleWithProviders } from '@angular/core';
 
-import { MqttService }                   from './mqtt.service';
-import { IMqttServiceOptions }           from './mqtt.model';
-
-export * from './mqtt.service';
-export * from './mqtt.model';
+import { MqttService } from './mqtt.service';
+import { IMqttServiceOptions } from './mqtt.model';
 
 export const MQTT_SERVICE_OPTIONS: IMqttServiceOptions = {
   connectOnCreate: true,
