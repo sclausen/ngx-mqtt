@@ -1,13 +1,14 @@
-import { EventEmitter } from '@angular/core';
+import { EventEmitter, Inject, Injectable } from '@angular/core';
 import { connect, ISubscriptionGrant } from 'mqtt';
 import * as extend from 'xtend';
 
 import { BehaviorSubject } from 'rxjs/BehaviorSubject';
 import { Observable } from 'rxjs/Observable';
 import { Observer } from 'rxjs/Observer';
-import { UsingObservable } from 'rxjs/observable/UsingObservable';
+import { using } from 'rxjs/observable/using';
+import { Unsubscribable } from 'rxjs/internal/types';
 import { Subject } from 'rxjs/Subject';
-import { Subscription, AnonymousSubscription } from 'rxjs/Subscription';
+import { Subscription } from 'rxjs/Subscription';
 import { merge } from 'rxjs/observable/merge';
 import { filter, publish, refCount } from 'rxjs/operators';
 
@@ -23,11 +24,16 @@ import {
   IPublishOptions
 } from './mqtt.model';
 
+import { MqttModule, MqttServiceConfig, MqttClientService } from './index';
+
 /**
  * With an instance of MqttService, you can observe and subscribe to MQTT in multiple places, e.g. in different components,
  * to only subscribe to the broker once per MQTT filter.
  * It also handles proper unsubscription from the broker, if the last observable with a filter is closed.
  */
+@Injectable({
+  providedIn: 'root',
+})
 export class MqttService {
   /** a map of all mqtt observables by filter */
   public observables: { [filter: string]: Observable<IMqttMessage> } = {};
@@ -40,7 +46,7 @@ export class MqttService {
   private _keepalive = 10;
   private _connectTimeout = 10000;
   private _reconnectPeriod = 10000;
-  private _url: string;
+  private _url: string | undefined = undefined;
 
   private _onConnect: EventEmitter<IOnConnectEvent> = new EventEmitter<IOnConnectEvent>();
   private _onClose: EventEmitter<void> = new EventEmitter<void>();
@@ -56,7 +62,10 @@ export class MqttService {
    * @param options connection and creation options for MQTT.js and this service
    * @param client an instance of IMqttClient
    */
-  constructor(private options: IMqttServiceOptions, private client?: IMqttClient) {
+  constructor(
+    @Inject(MqttServiceConfig) private options: IMqttServiceOptions,
+    @Inject(MqttClientService) private client?: IMqttClient
+  ) {
     if (options.connectOnCreate !== false) {
       this.connect({}, client);
     }
@@ -134,9 +143,8 @@ export class MqttService {
       throw new Error('mqtt client not connected');
     }
     if (!this.observables[filterString]) {
-      const rejected = new Subject();
-      this.observables[filterString] = <Observable<IMqttMessage>>UsingObservable
-        .create(
+      const rejected: Subject<IMqttMessage> = new Subject();
+      this.observables[filterString] = using(
           // resourceFactory: Do the actual ref-counting MQTT subscription.
           // refcount is decreased on unsubscribe.
           () => {
@@ -160,12 +168,12 @@ export class MqttService {
           // observableFactory: Create the observable that is consumed from.
           // This part is not executed until the Observable returned by
           // `observe` gets actually subscribed.
-          (subscription: AnonymousSubscription) => merge(rejected, this.messages))
+          (subscription: Unsubscribable | void) => merge(rejected, this.messages))
         .pipe(
           filter((msg: IMqttMessage) => MqttService.filterMatchesTopic(filterString, msg.topic)),
           publish(),
           refCount()
-        );
+        ) as Observable<IMqttMessage>;
     }
     return this.observables[filterString];
   }
