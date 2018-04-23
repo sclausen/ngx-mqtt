@@ -1,18 +1,5 @@
 import { inject, TestBed } from '@angular/core/testing';
 import { MqttService } from '../src/mqtt.service';
-import { MqttModule } from '../src/mqtt.module';
-
-describe('TestService', () => {
-  beforeEach(() => {
-    TestBed.configureTestingModule({
-      imports: [MqttModule.forRoot({})]
-    });
-  });
-
-  it('should be created', inject([MqttService], (service: MqttService) => {
-    expect(service).toBeTruthy();
-  }));
-});
 
 describe('MqttService', () => {
   it('is defined', () => {

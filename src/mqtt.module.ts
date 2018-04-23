@@ -17,24 +17,19 @@ export const MQTT_SERVICE_OPTIONS: IMqttServiceOptions = {
   path: ''
 };
 
-export const MqttServiceConfig = new InjectionToken<IMqttServiceOptions>('NgxMqttServiceConfig');
-export const MqttClientService = new InjectionToken<MqttClient>('NgxMqttClientService');
+export function mqttServiceFactory() {
+  return new MqttService(MQTT_SERVICE_OPTIONS);
+}
 
 @NgModule()
 export class MqttModule {
-  static forRoot(config: IMqttServiceOptions, client?: MqttClient): ModuleWithProviders {
+  static forRoot(providedService: any = {
+    provide: MqttService,
+    useFactory: mqttServiceFactory
+  }): ModuleWithProviders {
     return {
       ngModule: MqttModule,
-      providers: [
-        {
-          provide: MqttServiceConfig,
-          useValue: config
-        },
-        {
-          provide: MqttClientService,
-          useValue: client
-        }
-      ]
+      providers: [providedService]
     };
   }
 }
