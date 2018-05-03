@@ -10,7 +10,6 @@ ISSUES MISSING IMPORTANT INFORMATION MAY BE CLOSED WITHOUT INVESTIGATION.
 - [ ] Regression (a behavior that used to work and stopped working in a new release)
 - [ ] Bug report  <!-- Please search GitHub for a similar issue or PR before submitting -->
 - [ ] Feature request
-- [ ] Documentation issue or request
 
 ## Current behavior
 <!-- Describe how the issue manifests. -->
