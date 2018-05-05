@@ -118,7 +118,7 @@ npm run serve:docs # open a local webserver serving the documentation
 ```
 
 ## Test
-
+You need to have a running mosquitto with port 9001 configured listening for websockets.
 ``` sh
 npm test
 ```
