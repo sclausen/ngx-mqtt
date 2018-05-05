@@ -1,5 +1,6 @@
 import { EventEmitter, Inject, Injectable } from '@angular/core';
-import { connect, ISubscriptionGrant } from 'mqtt';
+import { ISubscriptionGrant } from './mqtt-types';
+import { connect } from '../vendor/mqtt.browserified.js';
 import * as extend from 'xtend';
 
 import { BehaviorSubject } from 'rxjs/BehaviorSubject';
