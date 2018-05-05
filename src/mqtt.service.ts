@@ -123,11 +123,11 @@ export class MqttService {
    * disconnect disconnects from the mqtt client.
    * This method `should` be executed when leaving the application.
    */
-  public disconnect() {
+  public disconnect(force = true) {
     if (!this.client) {
       throw new Error('mqtt client not connected');
     }
-    this.client.end();
+    this.client.end(force);
   }
 
   /**
