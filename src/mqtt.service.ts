@@ -24,13 +24,16 @@ import {
   IPublishOptions
 } from './mqtt.model';
 
-import { MqttModule } from './index';
+import { MqttModule, MqttServiceConfig, MqttClientService } from './index';
 
 /**
  * With an instance of MqttService, you can observe and subscribe to MQTT in multiple places, e.g. in different components,
  * to only subscribe to the broker once per MQTT filter.
  * It also handles proper unsubscription from the broker, if the last observable with a filter is closed.
  */
+@Injectable({
+  providedIn: 'root',
+})
 export class MqttService {
   /** a map of all mqtt observables by filter */
   public observables: { [filter: string]: Observable<IMqttMessage> } = {};
@@ -60,8 +63,8 @@ export class MqttService {
    * @param client an instance of IMqttClient
    */
   constructor(
-    private options: IMqttServiceOptions,
-    private client?: IMqttClient
+    @Inject(MqttServiceConfig) private options: IMqttServiceOptions,
+    @Inject(MqttClientService) private client?: IMqttClient
   ) {
     if (options.connectOnCreate !== false) {
       this.connect({}, client);
