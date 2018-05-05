@@ -19,7 +19,7 @@ module.exports = {
     extensions: ['.ts', '.js']
   },
 
-  entry: helpers.root('./src/index.ts'),
+  entry: ['./vendor/mqtt.browserified.js', helpers.root('./src/index.ts')],
 
   output: {
     path: helpers.root('bundles'),
@@ -49,6 +49,9 @@ module.exports = {
 
   plugins: [
     // fix the warning in ./~/@angular/core/src/linker/system_js_ng_module_factory_loader.js
+    new webpack.DefinePlugin({
+      'process.env.NODE_ENV': JSON.stringify('development')
+    }),
     new webpack.ContextReplacementPlugin(/angular(\\|\/)core(\\|\/)(esm(\\|\/)src|src)(\\|\/)linker/, helpers.root('./src')),
     new webpack.optimize.UglifyJsPlugin({
       compress: {
