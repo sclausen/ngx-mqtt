@@ -10,37 +10,41 @@ const config: IMqttServiceOptions = {
   path: ''
 };
 
-let mqttService: MqttService;
-
-beforeEach(() => {
-  TestBed.configureTestingModule({
-    providers: [
-      {
-        provide: MqttServiceConfig,
-        useValue: config
-      },
-      {
-        provide: MqttClientService,
-        useValue: undefined
-      }
-    ]
-  });
-  mqttService = TestBed.get(MqttService);
-});
-
 describe('MqttService', () => {
+  let mqttService: MqttService;
+  let originalTimeout;
+
+  beforeEach(() => {
+    originalTimeout = jasmine.DEFAULT_TIMEOUT_INTERVAL;
+    jasmine.DEFAULT_TIMEOUT_INTERVAL = 10000;
+
+    TestBed.configureTestingModule({
+      providers: [
+        {
+          provide: MqttServiceConfig,
+          useValue: config
+        },
+        {
+          provide: MqttClientService,
+          useValue: undefined
+        }
+      ]
+    });
+    mqttService = TestBed.get(MqttService);
+  });
+
+  afterEach(() => {
+    jasmine.DEFAULT_TIMEOUT_INTERVAL = originalTimeout;
+  });
+
   it('is defined', () => {
     expect(mqttService).toBeDefined();
   });
-  it('subscribe', (done) => {
-    mqttService.observe('$SYS/broker/uptime').subscribe((_: IMqttMessage) => {
-      done();
-    });
+  it('subscribe', async () => {
+    mqttService.observe('$SYS/broker/uptime').subscribe((_: IMqttMessage) => { });
   });
-  it('publish', (done) => {
-    mqttService.observe('test').subscribe((_: IMqttMessage) => {
-      done();
-    });
+  it('publish', async () => {
+    mqttService.observe('test').subscribe((_: IMqttMessage) => { });
     mqttService.unsafePublish('test', 'test');
   });
 });

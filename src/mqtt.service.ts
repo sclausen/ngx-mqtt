@@ -3,14 +3,7 @@ import { ISubscriptionGrant } from './mqtt-types';
 import { connect } from '../vendor/mqtt.browserified.js';
 import * as extend from 'xtend';
 
-import { BehaviorSubject } from 'rxjs/BehaviorSubject';
-import { Observable } from 'rxjs/Observable';
-import { Observer } from 'rxjs/Observer';
-import { using } from 'rxjs/observable/using';
-import { Unsubscribable } from 'rxjs/internal/types';
-import { Subject } from 'rxjs/Subject';
-import { Subscription } from 'rxjs/Subscription';
-import { merge } from 'rxjs/observable/merge';
+import { BehaviorSubject, merge, Observable, Observer, Subscription, Subject, Unsubscribable, using } from 'rxjs';
 import { filter, publish, refCount } from 'rxjs/operators';
 
 import {
