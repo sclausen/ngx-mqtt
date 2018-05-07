@@ -51,12 +51,11 @@ With this config the broker listens on `1883` for tcp connections and `9001` for
 ## Usage
 
 ``` typescript
-import { Observable } from 'rxjs/Observable';
+import { Observable } from 'rxjs';
 
 import {
   IMqttMessage,
   MqttModule,
-  MqttService,
   IMqttServiceOptions
 } from 'ngx-mqtt';
 
@@ -66,17 +65,10 @@ export const MQTT_SERVICE_OPTIONS: IMqttServiceOptions = {
   path: '/mqtt'
 };
 
-export function mqttServiceFactory() {
-  return new MqttService(MQTT_SERVICE_OPTIONS);
-}
-
 @NgModule({
   imports: [
     ...
-    MqttModule.forRoot({
-      provide: MqttService,
-      useFactory: mqttServiceFactory
-    })
+    MqttModule.forRoot(MQTT_SERVICE_OPTIONS)
   ]
   ...
 })
@@ -101,7 +93,7 @@ export class ExampleComponent implements OnDestroy {
   public unsafePublish(topic: string, message: string): void {
     this._mqttService.unsafePublish(topic, message, {qos: 1, retain: true});
   }
-  
+
   public ngOnDestroy() {
     this.subscription.unsubscribe();
   }
