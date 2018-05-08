@@ -144,15 +144,15 @@ export class MqttService {
           () => {
             const subscription: Subscription = new Subscription();
             this.client.subscribe(filterString, (err, granted: ISubscriptionGrant[]) => {
-              if(granted) { // granted can be undefined when an error occurs when the client is disconnecting
-                  granted.forEach((granted_: ISubscriptionGrant) => {
-                      if (granted_.qos === 128) {
-                          delete this.observables[granted_.topic];
-                          this.client.unsubscribe(granted_.topic);
-                          rejected.error(`subscription for '${granted_.topic}' rejected!`);
-                      }
-                      this._onSuback.emit({filter: filterString, granted: granted_.qos !== 128});
-                  });
+              if (granted) { // granted can be undefined when an error occurs when the client is disconnecting
+                granted.forEach((granted_: ISubscriptionGrant) => {
+                  if (granted_.qos === 128) {
+                    delete this.observables[granted_.topic];
+                    this.client.unsubscribe(granted_.topic);
+                    rejected.error(`subscription for '${granted_.topic}' rejected!`);
+                  }
+                  this._onSuback.emit({filter: filterString, granted: granted_.qos !== 128});
+                });
               }
             });
             subscription.add(() => {
