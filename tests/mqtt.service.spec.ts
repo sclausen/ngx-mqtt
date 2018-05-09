@@ -1,14 +1,22 @@
 import { MqttService } from '../src/mqtt.service';
 import { inject, TestBed } from '@angular/core/testing';
 import { MqttServiceConfig, MqttClientService } from '../src/mqtt.module';
-import { IMqttServiceOptions, IMqttMessage, MqttConnectionState, IOnConnectEvent, IOnMessageEvent, IOnSubackEvent, IOnErrorEvent } from '../src/mqtt.model';
+import {
+  IMqttMessage,
+  IMqttServiceOptions,
+  IOnConnectEvent,
+  IOnErrorEvent,
+  IOnMessageEvent,
+  IOnSubackEvent,
+  MqttConnectionState
+} from '../src/mqtt.model';
 import { skip } from 'rxjs/operators';
 import { noop } from 'rxjs';
 
 const config: IMqttServiceOptions = {
   connectOnCreate: true,
-  hostname: 'localhost',
-  port: 9001,
+  hostname: 'test.mosquitto.org',
+  port: 8080,
   path: ''
 };
 
