@@ -35,7 +35,9 @@ export interface IMqttMessage extends IPacket {
 
 export interface IPublishOptions extends IClientPublishOptions { }
 export interface IOnConnectEvent extends IMqttMessage { }
-export interface IOnErrorEvent extends Error { }
+export interface IOnErrorEvent extends Error {
+  type?: string;
+}
 export interface IOnMessageEvent extends IMqttMessage { }
 export interface IOnSubackEvent {
   granted: boolean;
