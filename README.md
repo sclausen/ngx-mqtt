@@ -12,7 +12,7 @@ It uses observables and takes care of subscription handling and message routing.
 ## Description
 
 ngx-mqtt is well suited for applications with many components and many subscribers.
-The problem is, if you regulary subscribe to mqtt with client libraries like `MQTT.js`, still every message is handled with an on-message-eventhandler, so you have to dispatch the received messages for yourself.
+The problem is, if you regularly subscribe to mqtt with client libraries like `MQTT.js`, still every message is handled with an on-message-event-handler, so you have to dispatch the received messages for yourself.
 So, if you have multiple components using mqtt in your code, you just want to only receive the messages for your local filter.
 Furthermore, if you destroy a component, you want to unsubscribe from mqtt, but only if no other component uses the same filter.
 
@@ -28,7 +28,7 @@ npm install ngx-mqtt --save
 
 ## Important Note
 
-Since most of the opened issues here are caused by misconfiguration, please make sure your broker listens on websocket and you've configured the right port for it.
+Since most of the opened issues here are caused by misconfiguration, please make sure your broker listens on websockets and you've configured the right port for it.
 
 Since ngx-mqtt is eventually just a wrapper around [MQTT.js](https://github.com/MQTT.js/mqtt.js) (a smart one though), please make sure you're able to connect to your broker via plain MQTT.js in the browser before opening any issues here.
 
@@ -81,7 +81,7 @@ export class AppModule { }
 
 @Component({
   template: `
-    <h1>{{mesage}}</h1>
+    <h1>{{message}}</h1>
   `
 })
 export class ExampleComponent implements OnDestroy {
