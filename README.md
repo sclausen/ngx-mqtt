@@ -32,7 +32,7 @@ Since most of the opened issues here are caused by misconfiguration, please make
 
 Since ngx-mqtt is eventually just a wrapper around [MQTT.js](https://github.com/MQTT.js/mqtt.js) (a smart one though), please make sure you're able to connect to your broker via plain MQTT.js in the browser before opening any issues here.
 
-<iframe width="100%" height="400" src="//jsfiddle.net/tmyq2k7t/1/embedded/html,result/dark/" allowpaymentrequest allowfullscreen="allowfullscreen" frameborder="0"></iframe>
+<iframe width="100%" height="400" src="//jsfiddle.net/tmyq2k7t/2/embedded/html,result/dark/" allowpaymentrequest allowfullscreen="allowfullscreen" frameborder="0"></iframe>
 
 mosquitto seems to be the most common broker, so here is an example configuration with websockets.
 
