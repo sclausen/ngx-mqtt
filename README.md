@@ -104,9 +104,7 @@ export class ExampleComponent implements OnDestroy {
 }
 ```
 
-For further usage use this module, see `demo.module.ts` and `index.html`.
-
-## Documentation
+## API Documentation
 
 ```sh
 npm run docs       # build the documentation
@@ -114,7 +112,7 @@ npm run serve:docs # open a local webserver serving the documentation
 ```
 
 ## Test
-You need to have a running mosquitto with port 9001 configured listening for websockets.
+ws://test.mosquitto.org:8080 has to be accessible to run the tests.
 ``` sh
 npm test
 ```
