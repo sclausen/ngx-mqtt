@@ -46,8 +46,10 @@ describe('MqttService', () => {
 
   it('#connect', (done) => {
     mqttService.disconnect(true);
-    mqttService.state.pipe(skip(1)).subscribe(state => {
-      expect(state).toBe(MqttConnectionState.CLOSED);
+    mqttService.connect({ ...config, clientId: 'connect' });
+    mqttService.state.pipe(skip(2)).subscribe(state => {
+      expect(state).toBe(MqttConnectionState.CONNECTED);
+      expect(mqttService.clientId).toBe('connect');
       done();
     });
   });
