@@ -139,32 +139,32 @@ export class MqttService {
     if (!this.observables[filterString]) {
       const rejected: Subject<IMqttMessage> = new Subject();
       this.observables[filterString] = using(
-          // resourceFactory: Do the actual ref-counting MQTT subscription.
-          // refcount is decreased on unsubscribe.
-          () => {
-            const subscription: Subscription = new Subscription();
-            this.client.subscribe(filterString, (err, granted: ISubscriptionGrant[]) => {
-              if (granted) { // granted can be undefined when an error occurs when the client is disconnecting
-                granted.forEach((granted_: ISubscriptionGrant) => {
-                  if (granted_.qos === 128) {
-                    delete this.observables[granted_.topic];
-                    this.client.unsubscribe(granted_.topic);
-                    rejected.error(`subscription for '${granted_.topic}' rejected!`);
-                  }
-                  this._onSuback.emit({filter: filterString, granted: granted_.qos !== 128});
-                });
-              }
-            });
-            subscription.add(() => {
-              delete this.observables[filterString];
-              this.client.unsubscribe(filterString);
-            });
-            return subscription;
-          },
-          // observableFactory: Create the observable that is consumed from.
-          // This part is not executed until the Observable returned by
-          // `observe` gets actually subscribed.
-          (subscription: Unsubscribable | void) => merge(rejected, this.messages))
+        // resourceFactory: Do the actual ref-counting MQTT subscription.
+        // refcount is decreased on unsubscribe.
+        () => {
+          const subscription: Subscription = new Subscription();
+          this.client.subscribe(filterString, (err, granted: ISubscriptionGrant[]) => {
+            if (granted) { // granted can be undefined when an error occurs when the client is disconnecting
+              granted.forEach((granted_: ISubscriptionGrant) => {
+                if (granted_.qos === 128) {
+                  delete this.observables[granted_.topic];
+                  this.client.unsubscribe(granted_.topic);
+                  rejected.error(`subscription for '${granted_.topic}' rejected!`);
+                }
+                this._onSuback.emit({ filter: filterString, granted: granted_.qos !== 128 });
+              });
+            }
+          });
+          subscription.add(() => {
+            delete this.observables[filterString];
+            this.client.unsubscribe(filterString);
+          });
+          return subscription;
+        },
+        // observableFactory: Create the observable that is consumed from.
+        // This part is not executed until the Observable returned by
+        // `observe` gets actually subscribed.
+        (subscription: Unsubscribable | void) => merge(rejected, this.messages))
         .pipe(
           filter((msg: IMqttMessage) => MqttService.filterMatchesTopic(filterString, msg.topic)),
           publish(),

@@ -1,7 +1,7 @@
 import { MqttService } from '../src/mqtt.service';
 import { inject, TestBed } from '@angular/core/testing';
 import { MqttServiceConfig, MqttClientService } from '../src/mqtt.module';
-import { IMqttServiceOptions, IMqttMessage, MqttConnectionState } from '../src/mqtt.model';
+import { IMqttServiceOptions, IMqttMessage, MqttConnectionState, IOnConnectEvent, IOnMessageEvent, IOnSubackEvent, IOnErrorEvent } from '../src/mqtt.model';
 import { skip } from 'rxjs/operators';
 import { noop } from 'rxjs';
 
@@ -84,6 +84,42 @@ describe('MqttService', () => {
       done();
     });
     mqttService.unsafePublish('test/unsafePublish', 'unsafePublish');
+  });
+
+
+  it('#onClose', (done) => {
+    mqttService.disconnect(true);
+    mqttService.onClose.subscribe(() => {
+      done();
+    });
+  });
+
+  it('#onConnect', (done) => {
+    mqttService.onConnect.subscribe((e: IOnConnectEvent) => {
+      expect(e.cmd).toBe('connack');
+      done();
+    });
+  });
+
+  // it('#onReconnect', (done) => {
+
+  // });
+
+  it('#onMessage', (done) => {
+    mqttService.observe('$SYS/broker/uptime').subscribe(noop);
+    mqttService.onMessage.subscribe((e: IOnMessageEvent) => {
+      expect(e.cmd).toBe('publish');
+      done();
+    });
+  });
+
+  it('#onSuback', (done) => {
+    mqttService.observe('$SYS/broker/uptime').subscribe(noop);
+    mqttService.onSuback.subscribe((e: IOnSubackEvent) => {
+      expect(e.filter).toBe('$SYS/broker/uptime');
+      expect(e.granted).toBeTruthy();
+      done();
+    });
   });
 });
 
