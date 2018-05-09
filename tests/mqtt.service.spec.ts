@@ -20,6 +20,8 @@ const config: IMqttServiceOptions = {
   path: ''
 };
 
+const uuid = generateUuid();
+
 describe('MqttService', () => {
   let mqttService: MqttService;
   let originalTimeout;
@@ -54,10 +56,10 @@ describe('MqttService', () => {
 
   it('#connect', (done) => {
     mqttService.disconnect(true);
-    mqttService.connect({ ...config, clientId: 'connect' });
+    mqttService.connect({ ...config, clientId: 'connect' + uuid });
     mqttService.state.pipe(skip(2)).subscribe(state => {
       expect(state).toBe(MqttConnectionState.CONNECTED);
-      expect(mqttService.clientId).toBe('connect');
+      expect(mqttService.clientId).toBe('connect' + uuid);
       done();
     });
   });
@@ -81,17 +83,17 @@ describe('MqttService', () => {
   });
 
   it('#publish', (done) => {
-    mqttService.observe('test/publish').subscribe((_: IMqttMessage) => {
+    mqttService.observe('ngx-mqtt/tests/publish/' + uuid).subscribe((_: IMqttMessage) => {
       done();
     });
-    mqttService.publish('test/publish', 'publish').subscribe(noop);
+    mqttService.publish('ngx-mqtt/tests/publish/' + uuid, 'publish').subscribe(noop);
   });
 
   it('#unsafePublish', (done) => {
-    mqttService.observe('test/unsafePublish').subscribe((_: IMqttMessage) => {
+    mqttService.observe('ngx-mqtt/tests/unsafePublish/' + uuid).subscribe((_: IMqttMessage) => {
       done();
     });
-    mqttService.unsafePublish('test/unsafePublish', 'unsafePublish');
+    mqttService.unsafePublish('ngx-mqtt/tests/unsafePublish/' + uuid, 'unsafePublish');
   });
 
 
@@ -173,3 +175,16 @@ describe('MqttService.filterMatchesTopic', () => {
     });
   }
 });
+
+function generateUuid() {
+  let uuid = '', i, random;
+  for (i = 0; i < 32; i++) {
+    random = Math.random() * 16 | 0;
+
+    if (i === 8 || i === 12 || i === 16 || i === 20) {
+      uuid += '-'
+    }
+    uuid += (i === 12 ? 4 : (i === 16 ? (random & 3 | 8) : random)).toString(16);
+  }
+  return uuid;
+}
