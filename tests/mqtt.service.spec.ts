@@ -121,6 +121,19 @@ describe('MqttService', () => {
       done();
     });
   });
+
+  it('#onError', (done) => {
+    mqttService.disconnect(true);
+    mqttService.connect({ hostname: 'not_existing' });
+    mqttService.state.pipe(skip(2)).subscribe(state => {
+      expect(state).toBe(MqttConnectionState.CLOSED);
+      mqttService.unsafePublish('onError', 'shouldThrow');
+    });
+    mqttService.onError.subscribe((e: IOnErrorEvent) => {
+      expect(e.type).toBe('error');
+      done();
+    });
+  });
 });
 
 describe('MqttService.filterMatchesTopic', () => {
