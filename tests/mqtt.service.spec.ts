@@ -1,7 +1,9 @@
 import { MqttService } from '../src/mqtt.service';
 import { inject, TestBed } from '@angular/core/testing';
 import { MqttServiceConfig, MqttClientService } from '../src/mqtt.module';
-import { IMqttServiceOptions, IMqttMessage } from '../src/mqtt.model';
+import { IMqttServiceOptions, IMqttMessage, MqttConnectionState } from '../src/mqtt.model';
+import { skip } from 'rxjs/operators';
+import { noop } from 'rxjs';
 
 const config: IMqttServiceOptions = {
   connectOnCreate: true,
@@ -37,15 +39,49 @@ describe('MqttService', () => {
     jasmine.DEFAULT_TIMEOUT_INTERVAL = originalTimeout;
   });
 
-  it('is defined', () => {
+  it('#constructor', () => {
     expect(mqttService).toBeDefined();
   });
-  it('subscribe', async () => {
-    mqttService.observe('$SYS/broker/uptime').subscribe((_: IMqttMessage) => { });
+
+
+  it('#connect', (done) => {
+    mqttService.disconnect(true);
+    mqttService.state.pipe(skip(1)).subscribe(state => {
+      expect(state).toBe(MqttConnectionState.CLOSED);
+      done();
+    });
   });
-  it('publish', async () => {
-    mqttService.observe('test').subscribe((_: IMqttMessage) => { });
-    mqttService.unsafePublish('test', 'test');
+
+  it('#clientId', () => {
+    expect(mqttService.clientId.startsWith('client-')).toBeTruthy();
+  });
+
+  it('#disconnect', (done) => {
+    mqttService.disconnect(true);
+    mqttService.state.pipe(skip(1)).subscribe(state => {
+      expect(state).toBe(MqttConnectionState.CLOSED);
+      done();
+    });
+  });
+
+  it('#observe', (done) => {
+    mqttService.observe('$SYS/broker/uptime').subscribe((_: IMqttMessage) => {
+      done();
+    });
+  });
+
+  it('#publish', (done) => {
+    mqttService.observe('test/publish').subscribe((_: IMqttMessage) => {
+      done();
+    });
+    mqttService.publish('test/publish', 'publish').subscribe(noop);
+  });
+
+  it('#unsafePublish', (done) => {
+    mqttService.observe('test/unsafePublish').subscribe((_: IMqttMessage) => {
+      done();
+    });
+    mqttService.unsafePublish('test/unsafePublish', 'unsafePublish');
   });
 });
 
