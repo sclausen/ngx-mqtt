@@ -1,6 +1,13 @@
+<a name="6.0.1"></a>
+## [6.0.1](https://github.com/sclausen/ngx-mqtt/compare/1.10.0...6.0.1) (2018-05-06)
+
+### BREAKING CHANGES
+
+* ngx-mqtt@^6.0.0 is compatible to angular@^6.0.0
+
+
 <a name="1.10.0"></a>
 ## [1.10.0](https://github.com/sclausen/ngx-mqtt/compare/1.0.9...1.10.0) (2017-05-19)
-
 
 ### Features
 
