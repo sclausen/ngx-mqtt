@@ -73,7 +73,8 @@ export const MQTT_SERVICE_OPTIONS: IMqttServiceOptions = {
   imports: [
     ...
     MqttModule.forRoot(MQTT_SERVICE_OPTIONS)
-  ]
+  ],
+  providers: [MqttService],
   ...
 })
 
