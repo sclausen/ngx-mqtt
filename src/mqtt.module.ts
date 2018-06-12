@@ -3,7 +3,6 @@ import {
   ModuleWithProviders,
   InjectionToken
 } from '@angular/core';
-import { MqttService } from './mqtt.service';
 import { IMqttClient, IMqttServiceOptions } from './mqtt.model';
 
 export * from './mqtt.service';

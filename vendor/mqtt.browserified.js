@@ -1315,7 +1315,6 @@ function WebSocket (url, protocols) {
 }
 
 var websocket = require('websocket-stream')
-var urlModule = require('url')
 
 function buildUrl (opts, client) {
   var protocol = opts.protocol === 'wxs' ? 'wss' : 'ws'
@@ -1354,30 +1353,18 @@ function createWebSocket (client, opts) {
 }
 
 function buildBuilder (client, opts) {
-  if (!opts.hostname) {
-    opts.hostname = opts.host
-  }
+  opts.hostname = opts.hostname || opts.host
 
   if (!opts.hostname) {
-    // Throwing an error in a Web Worker if no `hostname` is given, because we
-    // can not determine the `hostname` automatically.  If connecting to
-    // localhost, please supply the `hostname` as an argument.
-    if (typeof (document) === 'undefined') {
-      throw new Error('Could not determine host. Specify host manually.')
-    }
-    var parsed = urlModule.parse(document.URL)
-    opts.hostname = parsed.hostname
-
-    if (!opts.port) {
-      opts.port = parsed.port
-    }
+    throw new Error('Could not determine host. Specify host manually.')
   }
+
   return createWebSocket(client, opts)
 }
 
 module.exports = buildBuilder
 
-},{"url":49,"websocket-stream":55}],6:[function(require,module,exports){
+},{"websocket-stream":55}],6:[function(require,module,exports){
 (function (process){
 'use strict'
 
@@ -4754,24 +4741,28 @@ EventEmitter.prototype.removeAllListeners =
       return this;
     };
 
-EventEmitter.prototype.listeners = function listeners(type) {
-  var evlistener;
-  var ret;
-  var events = this._events;
+function _listeners(target, type, unwrap) {
+  var events = target._events;
 
   if (!events)
-    ret = [];
-  else {
-    evlistener = events[type];
-    if (!evlistener)
-      ret = [];
-    else if (typeof evlistener === 'function')
-      ret = [evlistener.listener || evlistener];
-    else
-      ret = unwrapListeners(evlistener);
-  }
+    return [];
 
-  return ret;
+  var evlistener = events[type];
+  if (!evlistener)
+    return [];
+
+  if (typeof evlistener === 'function')
+    return unwrap ? [evlistener.listener || evlistener] : [evlistener];
+
+  return unwrap ? unwrapListeners(evlistener) : arrayClone(evlistener, evlistener.length);
+}
+
+EventEmitter.prototype.listeners = function listeners(type) {
+  return _listeners(this, type, true);
+};
+
+EventEmitter.prototype.rawListeners = function rawListeners(type) {
+  return _listeners(this, type, false);
 };
 
 EventEmitter.listenerCount = function(emitter, type) {
@@ -5172,8 +5163,8 @@ var cache = {}
 
 function generateBuffer (i) {
   var buffer = Buffer.allocUnsafe(2)
-  buffer.writeUInt8(i >> 8, 0, true)
-  buffer.writeUInt8(i & 0x00FF, 0 + 1, true)
+  buffer.writeUInt8(i >> 8, 0)
+  buffer.writeUInt8(i & 0x00FF, 0 + 1)
 
   return buffer
 }
@@ -6085,7 +6076,7 @@ function genBufLength (length) {
     length = length / 128 | 0
     if (length > 0) digit = digit | 0x80
 
-    buffer.writeUInt8(digit, pos++, true)
+    buffer.writeUInt8(digit, pos++)
   } while (length > 0)
 
   return buffer
