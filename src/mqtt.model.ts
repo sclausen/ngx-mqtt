@@ -29,7 +29,7 @@ export interface IMqttMessage extends IPacket {
   qos: number;
   /** if this message is a retained message */
   retain: boolean;
-  /** if this message is a dublicate */
+  /** if this message is a duplicate */
   dup: boolean;
 }
 

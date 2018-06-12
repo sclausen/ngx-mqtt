@@ -1,10 +1,24 @@
 import { EventEmitter, Inject, Injectable } from '@angular/core';
-import { ISubscriptionGrant } from './mqtt-types';
+import { ISubscriptionGrant, IPacket } from './mqtt-types';
 import { connect } from '../vendor/mqtt.browserified.js';
 import * as extend from 'xtend';
 
-import { BehaviorSubject, merge, Observable, Observer, Subscription, Subject, Unsubscribable, using } from 'rxjs';
-import { filter, publish, refCount } from 'rxjs/operators';
+import {
+  BehaviorSubject,
+  merge,
+  Observable,
+  Observer,
+  Subscription,
+  Subject,
+  Unsubscribable,
+  using
+} from 'rxjs';
+import {
+  filter,
+  publish,
+  refCount,
+  publishReplay
+} from 'rxjs/operators';
 
 import {
   IMqttClient,
@@ -167,7 +181,7 @@ export class MqttService {
         (subscription: Unsubscribable | void) => merge(rejected, this.messages))
         .pipe(
           filter((msg: IMqttMessage) => MqttService.filterMatchesTopic(filterString, msg.topic)),
-          publish(),
+          publishReplay(),
           refCount()
         ) as Observable<IMqttMessage>;
     }
@@ -310,7 +324,7 @@ export class MqttService {
     console.error(e);
   }
 
-  private _handleOnMessage = (topic, msg, packet) => {
+  private _handleOnMessage = (topic: string, msg, packet: IMqttMessage) => {
     this._onMessage.emit(packet);
     if (packet.cmd === 'publish') {
       this.messages.next(packet);
