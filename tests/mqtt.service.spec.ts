@@ -1,5 +1,9 @@
+import { TestBed } from '@angular/core/testing';
+
+import { skip, map } from 'rxjs/operators';
+import { noop, Subscription } from 'rxjs';
+
 import { MqttService } from '../src/mqtt.service';
-import { inject, TestBed } from '@angular/core/testing';
 import { MqttServiceConfig, MqttClientService } from '../src/mqtt.module';
 import {
   IMqttMessage,
@@ -10,8 +14,6 @@ import {
   IOnSubackEvent,
   MqttConnectionState
 } from '../src/mqtt.model';
-import { skip } from 'rxjs/operators';
-import { noop } from 'rxjs';
 
 const config: IMqttServiceOptions = {
   connectOnCreate: true,
@@ -21,34 +23,33 @@ const config: IMqttServiceOptions = {
 };
 
 const uuid = generateUuid();
+let originalTimeout;
+let mqttService: MqttService;
+
+beforeEach(() => {
+  originalTimeout = jasmine.DEFAULT_TIMEOUT_INTERVAL;
+  jasmine.DEFAULT_TIMEOUT_INTERVAL = 30000;
+
+  TestBed.configureTestingModule({
+    providers: [
+      {
+        provide: MqttServiceConfig,
+        useValue: config
+      },
+      {
+        provide: MqttClientService,
+        useValue: undefined
+      }
+    ]
+  });
+  mqttService = TestBed.get(MqttService);
+});
+
+afterEach(() => {
+  jasmine.DEFAULT_TIMEOUT_INTERVAL = originalTimeout;
+});
 
 describe('MqttService', () => {
-  let mqttService: MqttService;
-  let originalTimeout;
-
-  beforeEach(() => {
-    originalTimeout = jasmine.DEFAULT_TIMEOUT_INTERVAL;
-    jasmine.DEFAULT_TIMEOUT_INTERVAL = 30000;
-
-    TestBed.configureTestingModule({
-      providers: [
-        {
-          provide: MqttServiceConfig,
-          useValue: config
-        },
-        {
-          provide: MqttClientService,
-          useValue: undefined
-        }
-      ]
-    });
-    mqttService = TestBed.get(MqttService);
-  });
-
-  afterEach(() => {
-    jasmine.DEFAULT_TIMEOUT_INTERVAL = originalTimeout;
-  });
-
   it('#constructor', () => {
     expect(mqttService).toBeDefined();
   });
@@ -143,6 +144,44 @@ describe('MqttService', () => {
       expect(e.type).toBe('error');
       done();
     });
+  });
+});
+
+describe('MqttService Retained Behavior', () => {
+  it('emit the retained message for all subscribers', (done) => {
+    let counter = 0;
+    const mqttSubscriptions: IMqttSubscription[] = [];
+
+    function observe(): void {
+      let s: IMqttSubscription = {
+        id: counter++,
+        payload: null
+      };
+      s.subscription = mqttService
+        .observe('topic')
+        .pipe(
+          map((v: IMqttMessage) => v.payload),
+      )
+        .subscribe(msg => { s.payload = msg; });
+      mqttSubscriptions.push(s);
+    }
+    interface IMqttSubscription {
+      subscription?: Subscription;
+      id: number;
+      payload: any;
+    }
+
+    observe();
+    for (let i = 0; i < 10; i++) {
+      setTimeout(() => observe(), i * 100);
+    }
+
+    setTimeout(() => {
+      mqttSubscriptions.map((s: IMqttSubscription) => {
+        expect(s.payload).toBeTruthy();
+      });
+      done();
+    }, 2000);
   });
 });
 
