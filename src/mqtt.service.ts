@@ -1,5 +1,5 @@
 import { EventEmitter, Inject, Injectable } from '@angular/core';
-import { ISubscriptionGrant, IPacket } from './mqtt-types';
+import { ISubscriptionGrant } from './mqtt-types';
 import { connect } from '../vendor/mqtt.browserified.js';
 import * as extend from 'xtend';
 
@@ -15,9 +15,7 @@ import {
 } from 'rxjs';
 import {
   filter,
-  publish,
-  refCount,
-  publishReplay
+  refCount
 } from 'rxjs/operators';
 
 import {
@@ -32,7 +30,8 @@ import {
   IPublishOptions
 } from './mqtt.model';
 
-import { MqttModule, MqttServiceConfig, MqttClientService } from './index';
+import { MqttServiceConfig, MqttClientService } from './index';
+import { publishReplayConditionally } from './rxjs/operators/publishReplayConditionally';
 
 /**
  * With an instance of MqttService, you can observe and subscribe to MQTT in multiple places, e.g. in different components,
@@ -181,7 +180,7 @@ export class MqttService {
         (subscription: Unsubscribable | void) => merge(rejected, this.messages))
         .pipe(
           filter((msg: IMqttMessage) => MqttService.filterMatchesTopic(filterString, msg.topic)),
-          publishReplay(),
+          publishReplayConditionally(1, undefined, undefined, undefined, (msg: IMqttMessage) => msg.retain === true),
           refCount()
         ) as Observable<IMqttMessage>;
     }

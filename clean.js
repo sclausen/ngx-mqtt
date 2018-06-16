@@ -4,6 +4,8 @@ var prefixes = [
   './src/mqtt.model',
   './src/mqtt.module',
   './src/mqtt.service',
+  './src/rxjs/operators/publishReplayConditionally',
+  './src/rxjs/ConditionalReplaySubject',
   './tests/mqtt.service.spec'
 ];
 var suffixes = ['.js', '.d.ts', '.metadata.json', '.js.map'];
