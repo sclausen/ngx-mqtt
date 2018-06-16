@@ -148,7 +148,7 @@ describe('MqttService', () => {
 });
 
 describe('MqttService Retained Behavior', () => {
-  it('emit the retained message for all subscribers', (done) => {
+  it('emit the retained message for all current and new subscribers', (done) => {
     let counter = 0;
     const mqttSubscriptions: IMqttSubscription[] = [];
 
@@ -182,6 +182,21 @@ describe('MqttService Retained Behavior', () => {
       });
       done();
     }, 2000);
+  });
+
+  it('do not emit not retained message on late subscribe', (done) => {
+    let lateMessage: IMqttMessage; // this message should never occur
+    mqttService.observe('notretained').subscribe((msg1: IMqttMessage) => {
+      expect(msg1).toBeDefined();
+      mqttService.observe('notretained').subscribe((msg2: IMqttMessage) => lateMessage = msg2);
+      setTimeout(() => {
+        expect(lateMessage).toBeUndefined();
+        done();
+      }, 1000);
+    });
+    setTimeout(() => {
+      mqttService.unsafePublish('notretained', 'foobar');
+    }, 1000);
   });
 });
 
