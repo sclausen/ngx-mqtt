@@ -11,10 +11,13 @@ import {
   Subscription,
   Subject,
   Unsubscribable,
-  using
+  using,
+  UnaryFunction
 } from 'rxjs';
 import {
   filter,
+  publish,
+  publishReplay,
   refCount
 } from 'rxjs/operators';
 
@@ -31,7 +34,6 @@ import {
 } from './mqtt.model';
 
 import { MqttServiceConfig, MqttClientService } from './index';
-import { publishReplayConditionally } from './rxjs/operators/publishReplayConditionally';
 
 /**
  * With an instance of MqttService, you can observe and subscribe to MQTT in multiple places, e.g. in different components,
@@ -66,8 +68,6 @@ export class MqttService {
    * The constructor needs [connection options]{@link IMqttServiceOptions} regarding the broker and some
    * options to configure behavior of this service, like if the connection to the broker
    * should be established on creation of this service or not.
-   * @param options connection and creation options for MQTT.js and this service
-   * @param client an instance of IMqttClient
    */
   constructor(
     @Inject(MqttServiceConfig) private options: IMqttServiceOptions,
@@ -82,8 +82,6 @@ export class MqttService {
 
   /**
    * connect manually connects to the mqtt broker.
-   * @param opts the connection options
-   * @param client an optional IMqttClient
    */
   public connect(opts?: IMqttServiceOptions, client?: IMqttClient) {
     const options = extend(this.options || {}, opts);
@@ -142,10 +140,31 @@ export class MqttService {
    * The observable will only emit messages matching the filter.
    * The first one subscribing to the resulting observable executes a mqtt subscribe.
    * The last one unsubscribing this filter executes a mqtt unsubscribe.
-   * @param  {string}                  filter
-   * @return {Observable<IMqttMessage>}        the observable you can subscribe to
+   * Every new subscriber gets the latest message.
+   */
+  public observeRetained(filterString: string): Observable<IMqttMessage> {
+    return this._generalObserve(filterString, () => publishReplay());
+  }
+
+  /**
+   * With this method, you can observe messages for a mqtt topic.
+   * The observable will only emit messages matching the filter.
+   * The first one subscribing to the resulting observable executes a mqtt subscribe.
+   * The last one unsubscribing this filter executes a mqtt unsubscribe.
    */
   public observe(filterString: string): Observable<IMqttMessage> {
+    return this._generalObserve(filterString, () => publish());
+  }
+
+  /**
+   * With this method, you can observe messages for a mqtt topic.
+   * The observable will only emit messages matching the filter.
+   * The first one subscribing to the resulting observable executes a mqtt subscribe.
+   * The last one unsubscribing this filter executes a mqtt unsubscribe.
+   * Depending on the publish function, the messages will either be replayed after new
+   * subscribers subscribe or the messages are just passed through
+   */
+  private _generalObserve(filterString: string, publishFn: Function): Observable<IMqttMessage> {
     if (!this.client) {
       throw new Error('mqtt client not connected');
     }
@@ -180,7 +199,7 @@ export class MqttService {
         (subscription: Unsubscribable | void) => merge(rejected, this.messages))
         .pipe(
           filter((msg: IMqttMessage) => MqttService.filterMatchesTopic(filterString, msg.topic)),
-          publishReplayConditionally(1, undefined, undefined, undefined, (msg: IMqttMessage) => msg.retain === true),
+          publishFn(),
           refCount()
         ) as Observable<IMqttMessage>;
     }
@@ -191,10 +210,6 @@ export class MqttService {
    * This method publishes a message for a topic with optional options.
    * The returned observable will complete, if publishing was successful
    * and will throw an error, if the publication fails
-   * @param  {string}           topic
-   * @param  {any}              message
-   * @param  {PublishOptions}   options
-   * @return {Observable<void>}
    */
   public publish(topic: string, message: any, options?: IPublishOptions): Observable<void> {
     if (!this.client) {
@@ -215,9 +230,6 @@ export class MqttService {
   /**
    * This method publishes a message for a topic with optional options.
    * If an error occurs, it will throw.
-   * @param  {string}           topic
-   * @param  {any}              message
-   * @param  {PublishOptions}   options
    */
   public unsafePublish(topic: string, message: any, options?: IPublishOptions): void {
     if (!this.client) {
