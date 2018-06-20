@@ -16,7 +16,9 @@ The problem is, if you regularly subscribe to mqtt with client libraries like `M
 So, if you have multiple components using mqtt in your code, you just want to only receive the messages for your local filter.
 Furthermore, if you destroy a component, you want to unsubscribe from mqtt, but only if no other component uses the same filter.
 
-This library exposes a method `observe(filter)`, which returns an Observable. If you subscribe to this observable, the actual mqtt subscription is executed. The topic filter is used to only add matching mqtt messages to the observable. Every other execution of `observe(filter)` with an already used filter will return the same observable. The observable keeps track of the subscribers and executes an mqtt unsubscribe method, if all subscribers have unsubscribed from the observable.
+This library exposes a method `observe(filter)` and `observeRetained(filter)`, which return an Observable. If you subscribe to one of this observables, the actual mqtt subscription is executed. The topic filter is used to only add matching mqtt messages to the observable. Every other execution of `observe(filter)` and `observeRetained(filter)` with an already used filter will return the same observable. The observable keeps track of the subscribers and executes an mqtt unsubscribe method, if all subscribers have unsubscribed from the observable.
+
+The difference between `observe(filter)` and `observeRetained(filter)` is that the latter will emit the latest received message to new subscribers. 
 
 ## Installation
 
