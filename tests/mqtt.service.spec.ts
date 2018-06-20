@@ -183,7 +183,7 @@ describe('MqttService Retained Behavior', () => {
         expect(s.payload).toBeTruthy();
       });
       done();
-    }, 300);
+    }, 3000);
   });
 
   it('do not emit not retained message on late subscribe', (done) => {
