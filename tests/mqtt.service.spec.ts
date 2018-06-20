@@ -17,10 +17,8 @@ import {
 
 const config: IMqttServiceOptions = {
   connectOnCreate: true,
-  hostname: 'localhost',
-  port: 9001,
-  // hostname: 'test.mosquitto.org',
-  // port: 8080,
+  hostname: 'test.mosquitto.org',
+  port: 8080,
   path: ''
 };
 
