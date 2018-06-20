@@ -17,12 +17,14 @@ import {
 
 const config: IMqttServiceOptions = {
   connectOnCreate: true,
-  hostname: 'test.mosquitto.org',
-  port: 8080,
+  hostname: 'localhost',
+  port: 9001,
+  // hostname: 'test.mosquitto.org',
+  // port: 8080,
   path: ''
 };
 
-const uuid = generateUuid();
+const currentUuid = generateUuid();
 let originalTimeout;
 let mqttService: MqttService;
 
@@ -57,10 +59,10 @@ describe('MqttService', () => {
 
   it('#connect', (done) => {
     mqttService.disconnect(true);
-    mqttService.connect({ ...config, clientId: 'connect' + uuid });
+    mqttService.connect({ ...config, clientId: 'connect' + currentUuid });
     mqttService.state.pipe(skip(2)).subscribe(state => {
       expect(state).toBe(MqttConnectionState.CONNECTED);
-      expect(mqttService.clientId).toBe('connect' + uuid);
+      expect(mqttService.clientId).toBe('connect' + currentUuid);
       done();
     });
   });
@@ -84,17 +86,17 @@ describe('MqttService', () => {
   });
 
   it('#publish', (done) => {
-    mqttService.observe('ngx-mqtt/tests/publish/' + uuid).subscribe((_: IMqttMessage) => {
+    mqttService.observe('ngx-mqtt/tests/publish/' + currentUuid).subscribe((_: IMqttMessage) => {
       done();
     });
-    mqttService.publish('ngx-mqtt/tests/publish/' + uuid, 'publish').subscribe(noop);
+    mqttService.publish('ngx-mqtt/tests/publish/' + currentUuid, 'publish').subscribe(noop);
   });
 
   it('#unsafePublish', (done) => {
-    mqttService.observe('ngx-mqtt/tests/unsafePublish/' + uuid).subscribe((_: IMqttMessage) => {
+    mqttService.observe('ngx-mqtt/tests/unsafePublish/' + currentUuid).subscribe((_: IMqttMessage) => {
       done();
     });
-    mqttService.unsafePublish('ngx-mqtt/tests/unsafePublish/' + uuid, 'unsafePublish');
+    mqttService.unsafePublish('ngx-mqtt/tests/unsafePublish/' + currentUuid, 'unsafePublish');
   });
 
 
@@ -150,6 +152,7 @@ describe('MqttService', () => {
 describe('MqttService Retained Behavior', () => {
   it('emit the retained message for all current and new subscribers', (done) => {
     let counter = 0;
+    const topic = 'ngx-mqtt/tests/retained/' + currentUuid;
     const mqttSubscriptions: IMqttSubscription[] = [];
 
     function observe(): void {
@@ -158,13 +161,15 @@ describe('MqttService Retained Behavior', () => {
         payload: null
       };
       s.subscription = mqttService
-        .observe('topic')
-        .pipe(
-          map((v: IMqttMessage) => v.payload),
-      )
-        .subscribe(msg => { s.payload = msg; });
+        .observeRetained(topic)
+        .pipe(map((v: IMqttMessage) => v.payload))
+        .subscribe(msg => {
+          s.payload = msg;
+        });
       mqttSubscriptions.push(s);
     }
+    mqttService.unsafePublish(topic, 'foobar', { retain: true, qos: 0 });
+
     interface IMqttSubscription {
       subscription?: Subscription;
       id: number;
@@ -172,30 +177,30 @@ describe('MqttService Retained Behavior', () => {
     }
 
     observe();
-    for (let i = 0; i < 10; i++) {
-      setTimeout(() => observe(), i * 100);
-    }
+    setTimeout(() => observe(), 100);
+    setTimeout(() => observe(), 200);
 
     setTimeout(() => {
       mqttSubscriptions.map((s: IMqttSubscription) => {
         expect(s.payload).toBeTruthy();
       });
       done();
-    }, 2000);
+    }, 300);
   });
 
   it('do not emit not retained message on late subscribe', (done) => {
+    const topic = 'ngx-mqtt/tests/notRetained/' + currentUuid;
     let lateMessage: IMqttMessage; // this message should never occur
-    mqttService.observe('notretained').subscribe((msg1: IMqttMessage) => {
+    mqttService.observe(topic).subscribe((msg1: IMqttMessage) => {
       expect(msg1).toBeDefined();
-      mqttService.observe('notretained').subscribe((msg2: IMqttMessage) => lateMessage = msg2);
+      mqttService.observe(topic).subscribe((msg2: IMqttMessage) => lateMessage = msg2);
       setTimeout(() => {
         expect(lateMessage).toBeUndefined();
         done();
       }, 1000);
     });
     setTimeout(() => {
-      mqttService.unsafePublish('notretained', 'foobar');
+      mqttService.unsafePublish(topic, 'foobar');
     }, 1000);
   });
 });
@@ -236,7 +241,7 @@ function generateUuid() {
     random = Math.random() * 16 | 0;
 
     if (i === 8 || i === 12 || i === 16 || i === 20) {
-      uuid += '-'
+      uuid += '-';
     }
     uuid += (i === 12 ? 4 : (i === 16 ? (random & 3 | 8) : random)).toString(16);
   }
