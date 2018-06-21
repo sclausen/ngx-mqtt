@@ -142,8 +142,8 @@ export class MqttService {
    * The last one unsubscribing this filter executes a mqtt unsubscribe.
    * Every new subscriber gets the latest message.
    */
-  public observeRetained(filterString: string): Observable<IMqttMessage> {
-    return this._generalObserve(filterString, () => publishReplay());
+  public observeRetained(filterString: string, bufferSize: number = Number.MAX_VALUE): Observable<IMqttMessage> {
+    return this._generalObserve(filterString, () => publishReplay(bufferSize));
   }
 
   /**
