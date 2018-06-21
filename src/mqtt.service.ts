@@ -143,7 +143,7 @@ export class MqttService {
    * Every new subscriber gets the latest message.
    */
   public observeRetained(filterString: string): Observable<IMqttMessage> {
-    return this._generalObserve(filterString, () => publishReplay());
+    return this._generalObserve(filterString, () => publishReplay(1));
   }
 
   /**
