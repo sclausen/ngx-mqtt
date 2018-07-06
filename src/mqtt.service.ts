@@ -208,8 +208,8 @@ export class MqttService {
 
   /**
    * This method publishes a message for a topic with optional options.
-   * The returned observable will complete, if publishing was successful
-   * and will throw an error, if the publication fails
+   * The returned observable will emit empty value and complete, if publishing was successful
+   * and will throw an error, if the publication fails.
    */
   public publish(topic: string, message: any, options?: IPublishOptions): Observable<void> {
     if (!this.client) {
@@ -220,6 +220,7 @@ export class MqttService {
         if (err) {
           obs.error(err);
         } else {
+          obs.next(null);
           obs.complete();
         }
       });

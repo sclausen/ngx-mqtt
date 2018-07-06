@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 
-import { skip, map } from 'rxjs/operators';
-import { noop, Subscription } from 'rxjs';
+import { skip, map, mergeMap, scan } from 'rxjs/operators';
+import { noop, Subscription, of } from 'rxjs';
 
 import { MqttService } from '../src/mqtt.service';
 import { MqttServiceConfig, MqttClientService } from '../src/mqtt.module';
@@ -88,6 +88,21 @@ describe('MqttService', () => {
       done();
     });
     mqttService.publish('ngx-mqtt/tests/publish/' + currentUuid, 'publish').subscribe(noop);
+  });
+
+  it('#pipeablePublish', (done) => {
+    mqttService.observe('ngx-mqtt/tests/pipeablePublish/' + currentUuid).pipe(
+      scan<IMqttMessage, number>(acc => { return acc + 1; }, 0)
+    ).subscribe(count => {
+      if (count === 3) {
+        done();
+      }
+    });
+    of(null).pipe(
+      mergeMap(i => mqttService.publish('ngx-mqtt/tests/pipeablePublish/' + currentUuid, 'publish1')),
+      mergeMap(i => mqttService.publish('ngx-mqtt/tests/pipeablePublish/' + currentUuid, 'publish2')),
+      mergeMap(i => mqttService.publish('ngx-mqtt/tests/pipeablePublish/' + currentUuid, 'publish3'))
+    ).subscribe();
   });
 
   it('#unsafePublish', (done) => {
