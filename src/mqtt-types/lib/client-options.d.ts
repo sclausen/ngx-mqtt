@@ -7,7 +7,7 @@ export interface IClientOptions extends ISecureClientOptions {
   host?: string // host does NOT include port
   hostname?: string
   path?: string
-  protocol?: 'wss' | 'ws' | 'mqtt' | 'mqtts' | 'tcp' | 'ssl' | 'wx' | 'wxs'
+  protocol?: 'wss' | 'ws'
 
   wsOptions?: {
     [x: string]: any
@@ -90,18 +90,6 @@ export interface IClientOptions extends ISecureClientOptions {
   transformWsUrl?: (url: string, options: IClientOptions, client: MqttClient) => string
 }
 export interface ISecureClientOptions {
-  /**
-   * optional private keys in PEM format
-   */
-  key?: string | string[] | Buffer | Buffer[] | Object[]
-  /**
-   * optional cert chains in PEM format
-   */
-  cert?: string | string[] | Buffer | Buffer[]
-  /**
-   * Optionally override the trusted CA certificates in PEM format
-   */
-  ca?: string | string[] | Buffer | Buffer[]
   rejectUnauthorized?: boolean
 }
 export interface IClientPublishOptions {
