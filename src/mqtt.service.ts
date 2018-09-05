@@ -316,17 +316,21 @@ export class MqttService {
   }
 
   private _handleOnConnect = (e: IOnConnectEvent) => {
-    Object.keys(this.observables).forEach((filter: string) => {
-      this.client.subscribe(filter);
-    });
+    if (this.options.connectOnCreate === true) {
+      Object.keys(this.observables).forEach((filter: string) => {
+        this.client.subscribe(filter);
+      });
+    }
     this.state.next(MqttConnectionState.CONNECTED);
     this._onConnect.emit(e);
   }
 
   private _handleOnReconnect = () => {
-    Object.keys(this.observables).forEach((filter: string) => {
-      this.client.subscribe(filter);
-    });
+    if (this.options.connectOnCreate === true) {
+      Object.keys(this.observables).forEach((filter: string) => {
+        this.client.subscribe(filter);
+      });
+    }
     this.state.next(MqttConnectionState.CONNECTING);
     this._onReconnect.emit();
   }
