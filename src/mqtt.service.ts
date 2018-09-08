@@ -59,6 +59,7 @@ export class MqttService {
 
   private _onConnect: EventEmitter<IOnConnectEvent> = new EventEmitter<IOnConnectEvent>();
   private _onClose: EventEmitter<void> = new EventEmitter<void>();
+  private _onOffline: EventEmitter<void> = new EventEmitter<void>();
   private _onError: EventEmitter<IOnErrorEvent> = new EventEmitter<IOnErrorEvent>();
   private _onReconnect: EventEmitter<void> = new EventEmitter<void>();
   private _onMessage: EventEmitter<IOnMessageEvent> = new EventEmitter<IOnMessageEvent>();
@@ -115,6 +116,7 @@ export class MqttService {
     this.client.stream.on('error', this._handleOnError);
     this.client.on('reconnect', this._handleOnReconnect);
     this.client.on('message', this._handleOnMessage);
+    this.client.on('offline', this._handleOnOffline);
   }
 
   /**
@@ -285,6 +287,11 @@ export class MqttService {
     return this._onClose;
   }
 
+  /** An EventEmitter to listen to offline events */
+  public get onOffline(): EventEmitter<void> {
+    return this._onOffline;
+  }
+
   /** An EventEmitter to listen to connect messages */
   public get onConnect(): EventEmitter<IOnConnectEvent> {
     return this._onConnect;
@@ -313,6 +320,11 @@ export class MqttService {
   private _handleOnClose = () => {
     this.state.next(MqttConnectionState.CLOSED);
     this._onClose.emit();
+  }
+
+  private _handleOnOffline = () => {
+    this.state.next(MqttConnectionState.CLOSED);
+    this._onOffline.emit();
   }
 
   private _handleOnConnect = (e: IOnConnectEvent) => {
