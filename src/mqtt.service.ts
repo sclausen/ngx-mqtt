@@ -23,14 +23,16 @@ import {
 
 import {
   IMqttClient,
-  MqttConnectionState,
   IMqttMessage,
   IMqttServiceOptions,
   IOnConnectEvent,
   IOnErrorEvent,
   IOnMessageEvent,
+  IOnPacketreceiveEvent,
+  IOnPacketsendEvent,
   IOnSubackEvent,
-  IPublishOptions
+  IPublishOptions,
+  MqttConnectionState
 } from './mqtt.model';
 
 import { MqttServiceConfig, MqttClientService } from './index';
@@ -58,12 +60,15 @@ export class MqttService {
   private _url: string | undefined = undefined;
 
   private _onConnect: EventEmitter<IOnConnectEvent> = new EventEmitter<IOnConnectEvent>();
+  private _onReconnect: EventEmitter<void> = new EventEmitter<void>();
   private _onClose: EventEmitter<void> = new EventEmitter<void>();
   private _onOffline: EventEmitter<void> = new EventEmitter<void>();
   private _onError: EventEmitter<IOnErrorEvent> = new EventEmitter<IOnErrorEvent>();
-  private _onReconnect: EventEmitter<void> = new EventEmitter<void>();
+  private _onEnd: EventEmitter<void> = new EventEmitter<void>();
   private _onMessage: EventEmitter<IOnMessageEvent> = new EventEmitter<IOnMessageEvent>();
   private _onSuback: EventEmitter<IOnSubackEvent> = new EventEmitter<IOnSubackEvent>();
+  private _onPacketsend: EventEmitter<IOnPacketsendEvent> = new EventEmitter<IOnPacketsendEvent>();
+  private _onPacketreceive: EventEmitter<IOnPacketreceiveEvent> = new EventEmitter<IOnPacketreceiveEvent>();
 
   /**
    * The constructor needs [connection options]{@link IMqttServiceOptions} regarding the broker and some
@@ -111,12 +116,15 @@ export class MqttService {
     this._clientId = mergedOptions.clientId;
 
     this.client.on('connect', this._handleOnConnect);
+    this.client.on('reconnect', this._handleOnReconnect);
     this.client.on('close', this._handleOnClose);
+    this.client.on('offline', this._handleOnOffline);
     this.client.on('error', this._handleOnError);
     this.client.stream.on('error', this._handleOnError);
-    this.client.on('reconnect', this._handleOnReconnect);
+    this.client.on('end', this._handleOnEnd);
     this.client.on('message', this._handleOnMessage);
-    this.client.on('offline', this._handleOnOffline);
+    this.client.on('packetsend', this._handleOnPacketsend);
+    this.client.on('packetreceive', this._handleOnPacketreceive);
   }
 
   /**
@@ -281,6 +289,15 @@ export class MqttService {
     return match();
   }
 
+  /** An EventEmitter to listen to connect messages */
+  public get onConnect(): EventEmitter<IOnConnectEvent> {
+    return this._onConnect;
+  }
+
+  /** An EventEmitter to listen to reconnect messages */
+  public get onReconnect(): EventEmitter<void> {
+    return this._onReconnect;
+  }
 
   /** An EventEmitter to listen to close messages */
   public get onClose(): EventEmitter<void> {
@@ -292,14 +309,14 @@ export class MqttService {
     return this._onOffline;
   }
 
-  /** An EventEmitter to listen to connect messages */
-  public get onConnect(): EventEmitter<IOnConnectEvent> {
-    return this._onConnect;
+  /** An EventEmitter to listen to error events */
+  public get onError(): EventEmitter<IOnErrorEvent> {
+    return this._onError;
   }
 
-  /** An EventEmitter to listen to reconnect messages */
-  public get onReconnect(): EventEmitter<void> {
-    return this._onReconnect;
+  /** An EventEmitter to listen to close messages */
+  public get onEnd(): EventEmitter<void> {
+    return this._onEnd;
   }
 
   /** An EventEmitter to listen to message events */
@@ -307,24 +324,19 @@ export class MqttService {
     return this._onMessage;
   }
 
+  /** An EventEmitter to listen to packetsend messages */
+  public get onPacketsend(): EventEmitter<IOnPacketsendEvent> {
+    return this._onPacketsend;
+  }
+
+  /** An EventEmitter to listen to packetreceive messages */
+  public get onPacketreceive(): EventEmitter<IOnPacketreceiveEvent> {
+    return this._onPacketreceive;
+  }
+
   /** An EventEmitter to listen to suback events */
   public get onSuback(): EventEmitter<IOnSubackEvent> {
     return this._onSuback;
-  }
-
-  /** An EventEmitter to listen to error events */
-  public get onError(): EventEmitter<IOnErrorEvent> {
-    return this._onError;
-  }
-
-  private _handleOnClose = () => {
-    this.state.next(MqttConnectionState.CLOSED);
-    this._onClose.emit();
-  }
-
-  private _handleOnOffline = () => {
-    this.state.next(MqttConnectionState.CLOSED);
-    this._onOffline.emit();
   }
 
   private _handleOnConnect = (e: IOnConnectEvent) => {
@@ -347,9 +359,22 @@ export class MqttService {
     this._onReconnect.emit();
   }
 
+  private _handleOnClose = () => {
+    this.state.next(MqttConnectionState.CLOSED);
+    this._onClose.emit();
+  }
+
+  private _handleOnOffline = () => {
+    this._onOffline.emit();
+  }
+
   private _handleOnError = (e: IOnErrorEvent) => {
     this._onError.emit(e);
     console.error(e);
+  }
+
+  private _handleOnEnd = () => {
+    this._onEnd.emit();
   }
 
   private _handleOnMessage = (topic: string, msg, packet: IMqttMessage) => {
@@ -357,6 +382,14 @@ export class MqttService {
     if (packet.cmd === 'publish') {
       this.messages.next(packet);
     }
+  }
+
+  private _handleOnPacketsend = (e: IOnPacketsendEvent) => {
+    this._onPacketsend.emit();
+  }
+
+  private _handleOnPacketreceive = (e: IOnPacketreceiveEvent) => {
+    this._onPacketreceive.emit();
   }
 
   private _generateClientId() {

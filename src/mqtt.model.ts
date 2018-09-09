@@ -47,3 +47,6 @@ export interface IOnSubackEvent {
 export interface IMqttClient extends MqttClient {
   stream: Stream;
 }
+
+export interface IOnPacketsendEvent extends IPacket { }
+export interface IOnPacketreceiveEvent extends IPacket { }
