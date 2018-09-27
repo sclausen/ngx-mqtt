@@ -32,7 +32,7 @@ npm install ngx-mqtt --save
 
 Since most of the opened issues here are caused by misconfiguration, please make sure your broker listens on websockets and you've configured the right port for it.
 
-Since ngx-mqtt is eventually just a wrapper around [MQTT.js](https://github.com/mqttjs/MQTT.js) (a smart one though), please make sure you're able to connect to your broker via plain MQTT.js in the browser before opening any issues here.
+Since ngx-mqtt is eventually just a wrapper around [MQTT.js](https://github.com/mqttjs/MQTT.js) (a smart one though), please make sure you're able to connect to your broker via plain MQTT.js in the browser before opening any issues here. If the following doesn't work, [stackoverflow.com](https://stackoverflow.com) is a great place to ask for help.
 
 <iframe width="100%" height="400" src="//jsfiddle.net/tmyq2k7t/2/embedded/html,result/dark/" allowpaymentrequest allowfullscreen="allowfullscreen" frameborder="0"></iframe>
 
