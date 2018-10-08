@@ -4,6 +4,7 @@ tests/**/*.metadata.json
 src/**/*.js
 src/**/*.d.ts
 src/**/*.metadata.json
+package-lock.json
 *.map
 *.js
 *.d.ts
