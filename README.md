@@ -114,7 +114,7 @@ npm run serve:docs # open a local webserver serving the documentation
 ```
 
 ## Test
-ws://test.mosquitto.org:8080 has to be accessible to run the tests.
+You need a mqtt broker which listens on port 9001 for websockets.
 ``` sh
 npm test
 ```
