@@ -22,7 +22,7 @@ ISSUESNOT FOLLOWING THE ISSUE TEMPLATE WILL BE CLOSED WITHOUT INVESTIGATION.
 ## Minimal reproduction of the problem with instructions
 <!--
 For bug reports please provide a *MINIMAL DEMO* of the problem in a separated github repository.
-Issues not having a reporoduction will from now on immediately being closed!
+Bug reports not having a reproduction will from now on immediately being closed!
 -->
 
 ## What is the motivation / use case for changing the behavior?
