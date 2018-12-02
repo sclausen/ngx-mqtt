@@ -1,6 +1,6 @@
 {
   "name": "ngx-mqtt",
-  "version": "6.7.0",
+  "version": "6.8.0",
   "description": "ngx mqtt client library",
   "main": "bundles/ngx-mqtt.min.js",
   "module": "./src/index.js",
@@ -66,6 +66,7 @@
     "karma-mocha-reporter": "^2.1.0",
     "karma-sourcemap-loader": "^0.3.7",
     "karma-webpack": "^3.0.0",
+    "mqtt": "github:mqttjs/MQTT.js#16848192d5e31918d5b63a697803231caef74a3a",
     "reflect-metadata": "^0.1.12",
     "rimraf": "^2.6.2",
     "rxjs": "^6.2.1",

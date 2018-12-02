@@ -19,7 +19,7 @@ module.exports = {
     extensions: ['.ts', '.js']
   },
 
-  entry: ['./vendor/mqtt.browserified.js', helpers.root('./src/index.ts')],
+  entry: ['./vendor/mqtt.min.js', helpers.root('./src/index.ts')],
 
   output: {
     path: helpers.root('bundles'),

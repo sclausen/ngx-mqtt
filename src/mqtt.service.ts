@@ -1,6 +1,6 @@
 import { EventEmitter, Inject, Injectable } from '@angular/core';
-import { ISubscriptionGrant, IClientSubscribeOptions } from './mqtt-types';
-import { connect } from '../vendor/mqtt.browserified.js';
+import { ISubscriptionGrant, IClientSubscribeOptions } from 'mqtt';
+import { connect } from '../vendor/mqtt.min.js';
 import * as extend from 'xtend';
 
 import {
