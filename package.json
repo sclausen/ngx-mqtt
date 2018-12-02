@@ -39,7 +39,7 @@
   "dependencies": {
     "@types/node": "6.0.45",
     "ecstatic": ">=2.0.0",
-    "mqtt": "2.15.1",
+    "mqtt": "^2.18.x",
     "ssri": ">=5.2.2"
   },
   "devDependencies": {
