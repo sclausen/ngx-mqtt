@@ -39,7 +39,8 @@
   "dependencies": {
     "@types/node": "10.3.2",
     "ecstatic": ">=3.2.0",
-    "ssri": ">=6.0.0"
+    "ssri": ">=6.0.0",
+    "mqtt": "github:mqttjs/MQTT.js#16848192d5e31918d5b63a697803231caef74a3a"
   },
   "devDependencies": {
     "@angular/common": "^6.0.4",
@@ -66,7 +67,6 @@
     "karma-mocha-reporter": "^2.1.0",
     "karma-sourcemap-loader": "^0.3.7",
     "karma-webpack": "^3.0.0",
-    "mqtt": "github:mqttjs/MQTT.js#16848192d5e31918d5b63a697803231caef74a3a",
     "reflect-metadata": "^0.1.12",
     "rimraf": "^2.6.2",
     "rxjs": "^6.2.1",
