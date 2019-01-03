@@ -215,9 +215,10 @@ export class MqttService {
   }
 
   /**
-   * This method publishes a message for a topic with optional options.
-   * The returned observable will emit empty value and complete, if publishing was successful
-   * and will throw an error, if the publication fails.
+   * This method returns an observable for a topic with optional options.
+   * After subscribing, the actual mqtt publication will be executed and
+   * the observable will emit an empty value and completes, if publishing was successful
+   * or throws an error, if the publication fails.
    */
   public publish(topic: string, message: any, options?: IPublishOptions): Observable<void> {
     if (!this.client) {
