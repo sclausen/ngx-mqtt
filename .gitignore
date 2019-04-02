@@ -5,6 +5,7 @@ src/**/*.js
 src/**/*.d.ts
 src/**/*.metadata.json
 package-lock.json
+.idea
 *.map
 *.js
 *.d.ts
