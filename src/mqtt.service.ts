@@ -220,7 +220,7 @@ export class MqttService {
    * the observable will emit an empty value and completes, if publishing was successful
    * or throws an error, if the publication fails.
    */
-  public publish(topic: string, message: any, options?: IPublishOptions): Observable<void> {
+  public publish(topic: string, message: string | Buffer, options?: IPublishOptions): Observable<void> {
     if (!this.client) {
       throw new Error('mqtt client not connected');
     }
@@ -241,7 +241,7 @@ export class MqttService {
    * This method publishes a message for a topic with optional options.
    * If an error occurs, it will throw.
    */
-  public unsafePublish(topic: string, message: any, options?: IPublishOptions): void {
+  public unsafePublish(topic: string, message: string | Buffer, options?: IPublishOptions): void {
     if (!this.client) {
       throw new Error('mqtt client not connected');
     }
