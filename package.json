@@ -1,6 +1,6 @@
 {
   "name": "ngx-mqtt",
-  "version": "6.9.0",
+  "version": "6.10.0",
   "description": "ngx mqtt client library",
   "main": "bundles/ngx-mqtt.min.js",
   "module": "./src/index.js",
@@ -20,6 +20,8 @@
   "keywords": [
     "angular",
     "angular6",
+    "angular7",
+    "angular8",
     "mqtt"
   ],
   "author": {
@@ -39,7 +41,7 @@
     "@types/node": "10.3.2",
     "ecstatic": ">=3.2.0",
     "ssri": ">=6.0.0",
-    "mqtt": "github:mqttjs/MQTT.js#62641d6ec22e4e51b1cacd3f692965d44a09d03e"
+    "mqtt": "^3.0.0"
   },
   "devDependencies": {
     "@angular/common": "^6.0.4",
