@@ -35,7 +35,7 @@ import {
   MqttConnectionState
 } from './mqtt.model';
 
-import { MqttServiceConfig, MqttClientService } from './index';
+import { MqttServiceConfig, MqttClientService } from './mqtt.module';
 
 /**
  * With an instance of MqttService, you can observe and subscribe to MQTT in multiple places, e.g. in different components,

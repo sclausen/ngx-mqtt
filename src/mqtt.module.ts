@@ -5,9 +5,6 @@ import {
 } from '@angular/core';
 import { IMqttClient, IMqttServiceOptions } from './mqtt.model';
 
-export * from './mqtt.service';
-export * from './mqtt.model';
-
 export const MQTT_SERVICE_OPTIONS: IMqttServiceOptions = {
   connectOnCreate: true,
   hostname: 'localhost',
