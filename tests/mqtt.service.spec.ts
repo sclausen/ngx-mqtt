@@ -18,8 +18,7 @@ import {
 const config: IMqttServiceOptions = {
   connectOnCreate: true,
   hostname: 'localhost',
-  port: 9001,
-  path: ''
+  port: 9001
 };
 
 const currentUuid = generateUuid();
