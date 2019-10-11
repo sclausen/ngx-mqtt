@@ -1,6 +1,6 @@
-import { EventEmitter, Inject, Injectable } from '@angular/core';
-import { ISubscriptionGrant, IClientSubscribeOptions } from 'mqtt';
-import { connect } from '../vendor/mqtt.min.js';
+import {EventEmitter, Inject, Injectable} from '@angular/core';
+import {ISubscriptionGrant, IClientSubscribeOptions} from 'mqtt';
+import {connect} from '../vendor/mqtt.min.js';
 import * as extend from 'xtend';
 
 import {
@@ -35,7 +35,7 @@ import {
   MqttConnectionState
 } from './mqtt.model';
 
-import { MqttServiceConfig, MqttClientService } from './mqtt.module';
+import {MqttServiceConfig, MqttClientService} from './mqtt.module';
 
 /**
  * With an instance of MqttService, you can observe and subscribe to MQTT in multiple places, e.g. in different components,
@@ -92,9 +92,13 @@ export class MqttService {
     const options = extend(this.options || {}, opts);
     const protocol = options.protocol || 'ws';
     const hostname = options.hostname || 'localhost';
-    const port = options.port || 1884;
-    const path = options.path || '/';
-    this._url = `${protocol}://${hostname}:${port}/${path}`;
+    if (options.url) {
+      this._url = options.url;
+    } else {
+      this._url = `${protocol}://${hostname}`;
+      this._url += options.port ? `:${options.port}` : '';
+      this._url += options.path ? `${options.path}` : '';
+    }
     this.state.next(MqttConnectionState.CONNECTING);
     const mergedOptions = extend({
       clientId: this._clientId,
@@ -150,7 +154,7 @@ export class MqttService {
    * The last one unsubscribing this filter executes a mqtt unsubscribe.
    * Every new subscriber gets the latest message.
    */
-  public observeRetained(filterString: string, opts: IClientSubscribeOptions = { qos: 1 }): Observable<IMqttMessage> {
+  public observeRetained(filterString: string, opts: IClientSubscribeOptions = {qos: 1}): Observable<IMqttMessage> {
     return this._generalObserve(filterString, () => publishReplay(1), opts);
   }
 
@@ -160,7 +164,7 @@ export class MqttService {
    * The first one subscribing to the resulting observable executes a mqtt subscribe.
    * The last one unsubscribing this filter executes a mqtt unsubscribe.
    */
-  public observe(filterString: string, opts: IClientSubscribeOptions = { qos: 1 }): Observable<IMqttMessage> {
+  public observe(filterString: string, opts: IClientSubscribeOptions = {qos: 1}): Observable<IMqttMessage> {
     return this._generalObserve(filterString, () => publish(), opts);
   }
 
@@ -191,7 +195,7 @@ export class MqttService {
                   this.client.unsubscribe(granted_.topic);
                   rejected.error(`subscription for '${granted_.topic}' rejected!`);
                 }
-                this._onSuback.emit({ filter: filterString, granted: granted_.qos !== 128 });
+                this._onSuback.emit({filter: filterString, granted: granted_.qos !== 128});
               });
             }
           });
@@ -276,13 +280,16 @@ export class MqttService {
       switch (f) {
         // In case the filter level is '#', this is a match no matter whether
         // the topic is undefined on this level or not ('#' matches parent element as well!).
-        case '#': return true;
+        case '#':
+          return true;
         // In case the filter level is '+', we shall dive into the recursion only if t is not undefined.
-        case '+': return t ? match() : false;
+        case '+':
+          return t ? match() : false;
         // In all other cases the filter level must match the topic level,
         // both must be defined and the filter tail must match the topic
         // tail (which is determined by the recursive call of match()).
-        default: return f === t && (f === undefined ? true : match());
+        default:
+          return f === t && (f === undefined ? true : match());
       }
     };
     return match();

@@ -12,7 +12,6 @@ package-lock.json
 *.metadata.json
 .vscode
 coverage
-documentation
 bundles
 node_modules
 npm-debug.log

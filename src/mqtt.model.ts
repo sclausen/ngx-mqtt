@@ -18,6 +18,8 @@ export interface IMqttServiceOptions extends IClientOptions {
   /** the path parameters to connect to e.g. `/mqtt` */
   path?: string;
   protocol?: 'wss' | 'ws';
+  /** if the url is provided, hostname, port path and protocol are ignored */
+  url?: string;
 }
 
 export interface IMqttMessage extends IPacket {
