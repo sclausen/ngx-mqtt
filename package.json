@@ -37,8 +37,6 @@
   },
   "dependencies": {
     "@types/node": "10.3.2",
-    "ecstatic": ">=3.2.0",
-    "ssri": ">=6.0.0",
     "mqtt": "^3.0.0"
   },
   "devDependencies": {
