@@ -17,7 +17,7 @@ export const MqttClientService = new InjectionToken<IMqttClient>('NgxMqttClientS
 
 @NgModule()
 export class MqttModule {
-  static forRoot(config: IMqttServiceOptions, client?: IMqttClient): ModuleWithProviders<any> {
+  static forRoot(config: IMqttServiceOptions, client?: IMqttClient): ModuleWithProviders<MqttModule> {
     return {
       ngModule: MqttModule,
       providers: [
