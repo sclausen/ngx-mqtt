@@ -16,7 +16,8 @@ module.exports = {
   devtool: 'inline-source-map',
 
   resolve: {
-    extensions: ['.ts', '.js']
+    extensions: ['.ts', '.js'],
+    mainFields: [ 'es2015', 'browser', 'module', 'main']
   },
 
   entry: ['./vendor/mqtt.min.js', helpers.root('./src/index.ts')],
