@@ -3,8 +3,8 @@ import { TestBed } from '@angular/core/testing';
 import { skip, map, mergeMap, scan } from 'rxjs/operators';
 import { noop, Subscription, of } from 'rxjs';
 
-import { MqttService } from '../src/mqtt.service';
-import { MqttServiceConfig, MqttClientService } from '../src/mqtt.module';
+import { MqttService } from './mqtt.service';
+import { MqttServiceConfig, MqttClientService } from './mqtt.module';
 import {
   IMqttMessage,
   IMqttServiceOptions,
@@ -13,7 +13,7 @@ import {
   IOnMessageEvent,
   IOnSubackEvent,
   MqttConnectionState
-} from '../src/mqtt.model';
+} from './mqtt.model';
 
 const config: IMqttServiceOptions = {
   connectOnCreate: true,
@@ -91,7 +91,7 @@ describe('MqttService', () => {
 
   it('#pipeablePublish', (done) => {
     mqttService.observe('ngx-mqtt/tests/pipeablePublish/' + currentUuid).pipe(
-      scan<IMqttMessage, number>(acc => { return acc + 1; }, 0)
+      scan<IMqttMessage, number>(acc => acc + 1, 0)
     ).subscribe(count => {
       if (count === 3) {
         done();
@@ -168,7 +168,7 @@ describe('MqttService Retained Behavior', () => {
     const mqttSubscriptions: IMqttSubscription[] = [];
 
     function observe(): void {
-      let s: IMqttSubscription = {
+      const s: IMqttSubscription = {
         id: counter++,
         payload: null
       };

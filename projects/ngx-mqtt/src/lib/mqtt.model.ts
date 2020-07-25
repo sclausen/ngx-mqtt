@@ -8,8 +8,10 @@ export enum MqttConnectionState {
 }
 
 export interface IMqttServiceOptions extends IClientOptions {
-  /** wether a new connection should be created
-   *  on creating an instance of the service */
+  /**
+   * whether a new connection should be created
+   * on creating an instance of the service
+   */
   connectOnCreate?: boolean;
   /** the hostname of the mqtt broker */
   hostname?: string;
