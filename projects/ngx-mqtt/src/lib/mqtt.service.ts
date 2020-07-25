@@ -1,25 +1,9 @@
 import {EventEmitter, Inject, Injectable} from '@angular/core';
-import {ISubscriptionGrant, IClientSubscribeOptions} from 'mqtt';
-import {connect} from 'mqtt';
+import {connect, IClientSubscribeOptions, ISubscriptionGrant} from 'mqtt';
 import * as extend from 'xtend';
 
-import {
-  BehaviorSubject,
-  merge,
-  Observable,
-  Observer,
-  Subscription,
-  Subject,
-  Unsubscribable,
-  using,
-  UnaryFunction
-} from 'rxjs';
-import {
-  filter,
-  publish,
-  publishReplay,
-  refCount
-} from 'rxjs/operators';
+import {BehaviorSubject, merge, Observable, Observer, Subject, Subscription, Unsubscribable, using} from 'rxjs';
+import {filter, publish, publishReplay, refCount} from 'rxjs/operators';
 
 import {
   IMqttClient,
@@ -35,7 +19,7 @@ import {
   MqttConnectionState
 } from './mqtt.model';
 
-import {MqttServiceConfig, MqttClientService} from './mqtt.module';
+import {MqttClientService, MqttServiceConfig} from './mqtt.module';
 
 /**
  * With an instance of MqttService, you can observe and subscribe to MQTT in multiple places, e.g. in different components,
@@ -120,7 +104,7 @@ export class MqttService {
     return this._onSuback;
   }
   /** a map of all mqtt observables by filter */
-  public observables: { [filter: string]: Observable<IMqttMessage> } = {};
+  public observables: { [filterString: string]: Observable<IMqttMessage> } = {};
   /** the connection state */
   public state: BehaviorSubject<MqttConnectionState> = new BehaviorSubject(MqttConnectionState.CLOSED);
   /** an observable of the last mqtt message */
@@ -151,12 +135,12 @@ export class MqttService {
    * @param  {string}  topic  A topic may not contain wildcards.
    * @return {boolean}        true on match and false otherwise.
    */
-  public static filterMatchesTopic(filter: string, topic: string): boolean {
-    if (filter[0] === '#' && topic[0] === '$') {
+  public static filterMatchesTopic(filterString: string, topic: string): boolean {
+    if (filterString[0] === '#' && topic[0] === '$') {
       return false;
     }
     // Preparation: split and reverse on '/'. The JavaScript split function is sane.
-    const fs = (filter || '').split('/').reverse();
+    const fs = (filterString || '').split('/').reverse();
     const ts = (topic || '').split('/').reverse();
     // This function is tail recursive and compares both arrays one element at a time.
     const match = (): boolean => {
@@ -317,7 +301,7 @@ export class MqttService {
     if (!this.client) {
       throw new Error('mqtt client not connected');
     }
-    const source = Observable.create((obs: Observer<void>) => {
+    return Observable.create((obs: Observer<void>) => {
       this.client.publish(topic, message, options, (err: Error) => {
         if (err) {
           obs.error(err);
@@ -327,7 +311,6 @@ export class MqttService {
         }
       });
     });
-    return source;
   }
 
   /**
@@ -347,8 +330,8 @@ export class MqttService {
 
   private _handleOnConnect = (e: IOnConnectEvent) => {
     if (this.options.connectOnCreate === true) {
-      Object.keys(this.observables).forEach((filter: string) => {
-        this.client.subscribe(filter);
+      Object.keys(this.observables).forEach((filterString: string) => {
+        this.client.subscribe(filterString);
       });
     }
     this.state.next(MqttConnectionState.CONNECTED);
@@ -357,8 +340,8 @@ export class MqttService {
 
   private _handleOnReconnect = () => {
     if (this.options.connectOnCreate === true) {
-      Object.keys(this.observables).forEach((filter: string) => {
-        this.client.subscribe(filter);
+      Object.keys(this.observables).forEach((filterString: string) => {
+        this.client.subscribe(filterString);
       });
     }
     this.state.next(MqttConnectionState.CONNECTING);
