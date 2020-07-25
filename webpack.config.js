@@ -56,7 +56,8 @@ module.exports = {
     new webpack.optimize.UglifyJsPlugin({
       compress: {
         warnings: false
-      }
+      },
+      exclude: /\/vendor/,
     }),
     new webpack.LoaderOptionsPlugin({
       options: {
