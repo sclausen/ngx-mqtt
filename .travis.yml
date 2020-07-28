@@ -1,19 +1,25 @@
 language: node_js
-sudo: false
+
+sudo: true
+
 node_js:
   - 10
+
 script:
   npm test
+
+addons:
+  chrome: stable
+
 branches:
   only:
-  - master
+    - master
+
 services:
   - docker
-  - xvfb
+
 before_install:
-  - export CHROME_BIN=chromium-browser
   - docker pull eclipse-mosquitto
 
 before_script:
-  - export DISPLAY=:99.0
   - docker run -d -p 9001:9001 -v $(pwd)/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro eclipse-mosquitto
