@@ -1,25 +1,9 @@
 import {EventEmitter, Inject, Injectable} from '@angular/core';
-import {ISubscriptionGrant, IClientSubscribeOptions} from 'mqtt';
-import {connect} from '../vendor/mqtt.min.js';
+import {connect, IClientSubscribeOptions, ISubscriptionGrant} from 'mqtt';
 import * as extend from 'xtend';
 
-import {
-  BehaviorSubject,
-  merge,
-  Observable,
-  Observer,
-  Subscription,
-  Subject,
-  Unsubscribable,
-  using,
-  UnaryFunction
-} from 'rxjs';
-import {
-  filter,
-  publish,
-  publishReplay,
-  refCount
-} from 'rxjs/operators';
+import {BehaviorSubject, merge, Observable, Observer, Subject, Subscription, Unsubscribable, using} from 'rxjs';
+import {filter, publish, publishReplay, refCount} from 'rxjs/operators';
 
 import {
   IMqttClient,
@@ -35,7 +19,7 @@ import {
   MqttConnectionState
 } from './mqtt.model';
 
-import {MqttServiceConfig, MqttClientService} from './mqtt.module';
+import {MqttClientService, MqttServiceConfig} from './mqtt.module';
 
 /**
  * With an instance of MqttService, you can observe and subscribe to MQTT in multiple places, e.g. in different components,
@@ -46,8 +30,81 @@ import {MqttServiceConfig, MqttClientService} from './mqtt.module';
   providedIn: 'root',
 })
 export class MqttService {
+
+  /**
+   * The constructor needs [connection options]{@link IMqttServiceOptions} regarding the broker and some
+   * options to configure behavior of this service, like if the connection to the broker
+   * should be established on creation of this service or not.
+   */
+  constructor(
+    @Inject(MqttServiceConfig) private options: IMqttServiceOptions,
+    @Inject(MqttClientService) private client?: IMqttClient
+  ) {
+    if (options.connectOnCreate !== false) {
+      this.connect({}, client);
+    }
+
+    this.state.subscribe();
+  }
+
+  /**
+   * gets the _clientId
+   */
+  public get clientId() {
+    return this._clientId;
+  }
+
+  /** An EventEmitter to listen to connect messages */
+  public get onConnect(): EventEmitter<IOnConnectEvent> {
+    return this._onConnect;
+  }
+
+  /** An EventEmitter to listen to reconnect messages */
+  public get onReconnect(): EventEmitter<void> {
+    return this._onReconnect;
+  }
+
+  /** An EventEmitter to listen to close messages */
+  public get onClose(): EventEmitter<void> {
+    return this._onClose;
+  }
+
+  /** An EventEmitter to listen to offline events */
+  public get onOffline(): EventEmitter<void> {
+    return this._onOffline;
+  }
+
+  /** An EventEmitter to listen to error events */
+  public get onError(): EventEmitter<IOnErrorEvent> {
+    return this._onError;
+  }
+
+  /** An EventEmitter to listen to close messages */
+  public get onEnd(): EventEmitter<void> {
+    return this._onEnd;
+  }
+
+  /** An EventEmitter to listen to message events */
+  public get onMessage(): EventEmitter<IOnMessageEvent> {
+    return this._onMessage;
+  }
+
+  /** An EventEmitter to listen to packetsend messages */
+  public get onPacketsend(): EventEmitter<IOnPacketsendEvent> {
+    return this._onPacketsend;
+  }
+
+  /** An EventEmitter to listen to packetreceive messages */
+  public get onPacketreceive(): EventEmitter<IOnPacketreceiveEvent> {
+    return this._onPacketreceive;
+  }
+
+  /** An EventEmitter to listen to suback events */
+  public get onSuback(): EventEmitter<IOnSubackEvent> {
+    return this._onSuback;
+  }
   /** a map of all mqtt observables by filter */
-  public observables: { [filter: string]: Observable<IMqttMessage> } = {};
+  public observables: { [filterString: string]: Observable<IMqttMessage> } = {};
   /** the connection state */
   public state: BehaviorSubject<MqttConnectionState> = new BehaviorSubject(MqttConnectionState.CLOSED);
   /** an observable of the last mqtt message */
@@ -70,19 +127,42 @@ export class MqttService {
   private _onPacketreceive: EventEmitter<IOnPacketreceiveEvent> = new EventEmitter<IOnPacketreceiveEvent>();
 
   /**
-   * The constructor needs [connection options]{@link IMqttServiceOptions} regarding the broker and some
-   * options to configure behavior of this service, like if the connection to the broker
-   * should be established on creation of this service or not.
+   * This static method shall be used to determine whether a MQTT
+   * topic matches a given filter. The matching rules are specified in the MQTT
+   * standard documentation and in the library test suite.
+   *
+   * @param  {string}  filter A filter may contain wildcards like '#' and '+'.
+   * @param  {string}  topic  A topic may not contain wildcards.
+   * @return {boolean}        true on match and false otherwise.
    */
-  constructor(
-    @Inject(MqttServiceConfig) private options: IMqttServiceOptions,
-    @Inject(MqttClientService) private client?: IMqttClient
-  ) {
-    if (options.connectOnCreate !== false) {
-      this.connect({}, client);
+  public static filterMatchesTopic(filterString: string, topic: string): boolean {
+    if (filterString[0] === '#' && topic[0] === '$') {
+      return false;
     }
-
-    this.state.subscribe();
+    // Preparation: split and reverse on '/'. The JavaScript split function is sane.
+    const fs = (filterString || '').split('/').reverse();
+    const ts = (topic || '').split('/').reverse();
+    // This function is tail recursive and compares both arrays one element at a time.
+    const match = (): boolean => {
+      // Cutting of the last element of both the filter and the topic using pop().
+      const f = fs.pop();
+      const t = ts.pop();
+      switch (f) {
+        // In case the filter level is '#', this is a match no matter whether
+        // the topic is undefined on this level or not ('#' matches parent element as well!).
+        case '#':
+          return true;
+        // In case the filter level is '+', we shall dive into the recursion only if t is not undefined.
+        case '+':
+          return t ? match() : false;
+        // In all other cases the filter level must match the topic level,
+        // both must be defined and the filter tail must match the topic
+        // tail (which is determined by the recursive call of match()).
+        default:
+          return f === t && (f === undefined ? true : match());
+      }
+    };
+    return match();
   }
 
   /**
@@ -111,7 +191,7 @@ export class MqttService {
     }
 
     if (!client) {
-      this.client = <IMqttClient>connect(this._url, mergedOptions);
+      this.client = (connect(this._url, mergedOptions) as IMqttClient);
     } else {
       this.client = client;
     }
@@ -127,13 +207,6 @@ export class MqttService {
     this.client.on('message', this._handleOnMessage);
     this.client.on('packetsend', this._handleOnPacketsend);
     this.client.on('packetreceive', this._handleOnPacketreceive);
-  }
-
-  /**
-   * gets the _clientId
-   */
-  public get clientId() {
-    return this._clientId;
   }
 
   /**
@@ -228,7 +301,7 @@ export class MqttService {
     if (!this.client) {
       throw new Error('mqtt client not connected');
     }
-    const source = Observable.create((obs: Observer<void>) => {
+    return Observable.create((obs: Observer<void>) => {
       this.client.publish(topic, message, options, (err: Error) => {
         if (err) {
           obs.error(err);
@@ -238,7 +311,6 @@ export class MqttService {
         }
       });
     });
-    return source;
   }
 
   /**
@@ -256,99 +328,10 @@ export class MqttService {
     });
   }
 
-  /**
-   * This static method shall be used to determine whether a MQTT
-   * topic matches a given filter. The matching rules are specified in the MQTT
-   * standard documentation and in the library test suite.
-   *
-   * @param  {string}  filter A filter may contain wildcards like '#' and '+'.
-   * @param  {string}  topic  A topic may not contain wildcards.
-   * @return {boolean}        true on match and false otherwise.
-   */
-  public static filterMatchesTopic(filter: string, topic: string): boolean {
-    if (filter[0] === '#' && topic[0] === '$') {
-      return false;
-    }
-    // Preparation: split and reverse on '/'. The JavaScript split function is sane.
-    const fs = (filter || '').split('/').reverse();
-    const ts = (topic || '').split('/').reverse();
-    // This function is tail recursive and compares both arrays one element at a time.
-    const match = (): boolean => {
-      // Cutting of the last element of both the filter and the topic using pop().
-      const f = fs.pop();
-      const t = ts.pop();
-      switch (f) {
-        // In case the filter level is '#', this is a match no matter whether
-        // the topic is undefined on this level or not ('#' matches parent element as well!).
-        case '#':
-          return true;
-        // In case the filter level is '+', we shall dive into the recursion only if t is not undefined.
-        case '+':
-          return t ? match() : false;
-        // In all other cases the filter level must match the topic level,
-        // both must be defined and the filter tail must match the topic
-        // tail (which is determined by the recursive call of match()).
-        default:
-          return f === t && (f === undefined ? true : match());
-      }
-    };
-    return match();
-  }
-
-  /** An EventEmitter to listen to connect messages */
-  public get onConnect(): EventEmitter<IOnConnectEvent> {
-    return this._onConnect;
-  }
-
-  /** An EventEmitter to listen to reconnect messages */
-  public get onReconnect(): EventEmitter<void> {
-    return this._onReconnect;
-  }
-
-  /** An EventEmitter to listen to close messages */
-  public get onClose(): EventEmitter<void> {
-    return this._onClose;
-  }
-
-  /** An EventEmitter to listen to offline events */
-  public get onOffline(): EventEmitter<void> {
-    return this._onOffline;
-  }
-
-  /** An EventEmitter to listen to error events */
-  public get onError(): EventEmitter<IOnErrorEvent> {
-    return this._onError;
-  }
-
-  /** An EventEmitter to listen to close messages */
-  public get onEnd(): EventEmitter<void> {
-    return this._onEnd;
-  }
-
-  /** An EventEmitter to listen to message events */
-  public get onMessage(): EventEmitter<IOnMessageEvent> {
-    return this._onMessage;
-  }
-
-  /** An EventEmitter to listen to packetsend messages */
-  public get onPacketsend(): EventEmitter<IOnPacketsendEvent> {
-    return this._onPacketsend;
-  }
-
-  /** An EventEmitter to listen to packetreceive messages */
-  public get onPacketreceive(): EventEmitter<IOnPacketreceiveEvent> {
-    return this._onPacketreceive;
-  }
-
-  /** An EventEmitter to listen to suback events */
-  public get onSuback(): EventEmitter<IOnSubackEvent> {
-    return this._onSuback;
-  }
-
   private _handleOnConnect = (e: IOnConnectEvent) => {
     if (this.options.connectOnCreate === true) {
-      Object.keys(this.observables).forEach((filter: string) => {
-        this.client.subscribe(filter);
+      Object.keys(this.observables).forEach((filterString: string) => {
+        this.client.subscribe(filterString);
       });
     }
     this.state.next(MqttConnectionState.CONNECTED);
@@ -357,8 +340,8 @@ export class MqttService {
 
   private _handleOnReconnect = () => {
     if (this.options.connectOnCreate === true) {
-      Object.keys(this.observables).forEach((filter: string) => {
-        this.client.subscribe(filter);
+      Object.keys(this.observables).forEach((filterString: string) => {
+        this.client.subscribe(filterString);
       });
     }
     this.state.next(MqttConnectionState.CONNECTING);

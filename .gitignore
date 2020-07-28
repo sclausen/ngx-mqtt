@@ -1,24 +1,46 @@
-tests/**/*.js
-tests/**/*.d.ts
-tests/**/*.metadata.json
-src/**/*.js
-src/**/*.d.ts
-src/**/*.metadata.json
-package-lock.json
-.idea
-*.map
-*.js
-*.d.ts
-*.metadata.json
-.vscode
-coverage
-bundles
-node_modules
+# See http://help.github.com/ignore-files/ for more about ignoring files.
+
+# compiled output
+/dist
+/tmp
+/out-tsc
+# Only exists if Bazel was run
+/bazel-out
+
+# dependencies
+/node_modules
+
+# profiling files
+chrome-profiler-events*.json
+speed-measure-plugin*.json
+
+# IDEs and editors
+/.idea
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# IDE - VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.history/*
+
+# misc
+/.sass-cache
+/connect.lock
+/coverage
+/libpeerconnection.log
 npm-debug.log
-!src/mqttjs.d.ts
-!typings.d.ts
-!config/*
-!karma.conf.js
-!webpack.config.js
-!make.js
-!clean.js
+yarn-error.log
+testem.log
+/typings
+
+# System Files
+.DS_Store
+Thumbs.db
