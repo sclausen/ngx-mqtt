@@ -8,4 +8,15 @@ This means although you have the possibility to use `mqtt`, `mqtts`, `tcp`, `ssl
 
 If you have any issues using this library, please visit it's [homepage](https://sclausen.github.io/ngx-mqtt/) and look for similar issues in the issue tracker before you file a bug.
 
-## **ngx-mqtt >= 6 is only compatible with angular >= 6**
+## **ngx-mqtt >= 7 is only compatible with angular >= 9**
+
+## Local development
+For local development all peer dependency automatically installed during install.
+Also please be aware that exact MQTT version used as dependency, you need to manually bump it if it will update.
+
+## Publish new version
+To follow semver helper scripts was added `npm run release:patch` etc.
+Those commands will autoupdate changelog and dependant package.json's
+
+Unfortunately command `npm publish` is broken due to nature of ng-packager. 
+It's substituted with `npm run publish`, which will correctly build and publish production build
