@@ -14,13 +14,7 @@
     "lib": [
       "es2018",
       "dom"
-    ],
-    "paths": {
-      "ngx-mqtt": [
-        "dist/ngx-mqtt/ngx-mqtt",
-        "dist/ngx-mqtt"
-      ]
-    }
+    ]
   },
   "angularCompilerOptions": {
     "fullTemplateTypeCheck": true,
