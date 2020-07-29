@@ -1,7 +1,7 @@
 {
   "name": "ngx-mqtt",
   "description": "ngx mqtt client library",
-  "version": "7.0.1",
+  "version": "7.0.2",
   "repository": {
     "type": "git",
     "url": "https://github.com/sclausen/ngx-mqtt.git"
