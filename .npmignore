@@ -12,6 +12,5 @@ make.js
 clean.js
 Makefile
 karma.conf.js
-tsconfig.json
 tslint.json
 webpack.config.js
