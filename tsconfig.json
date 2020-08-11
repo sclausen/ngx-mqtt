@@ -21,5 +21,10 @@
     "strictInjectionParameters": true,
     "strictMetadataEmit": true,
     "skipTemplateCodegen": true
+  },
+  "paths": {
+    "NgxMqtt": [
+      "dist/ngx-mqtt"
+    ]
   }
 }
