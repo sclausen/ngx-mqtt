@@ -1,7 +1,7 @@
 {
   "name": "ngx-mqtt",
   "description": "ngx mqtt client library",
-  "version": "7.0.2",
+  "version": "7.0.4",
   "repository": {
     "type": "git",
     "url": "https://github.com/sclausen/ngx-mqtt.git"
@@ -29,8 +29,7 @@
     "postinstall": "npm-install-peers",
     "build": "ng build",
     "build:prod": "ng build --prod",
-    "prepublishOnly": "echo 'use `npm run prepublish` instead' && exit 1",
-    "publish": "npm run build:prod && npm publish dist/ngx-mqtt/",
+    "publishx": "npm run build:prod && npm publish dist/ngx-mqtt/",
     "test": "ng test --watch false --browsers ChromeHeadless",
     "lint": "ng lint",
     "e2e": "ng e2e",
