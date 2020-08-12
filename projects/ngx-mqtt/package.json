@@ -1,6 +1,9 @@
 {
     "name": "ngx-mqtt",
-    "version": "7.0.2",
+    "scripts": {
+      "postinstall": "node postinstall"
+    },
+    "version": "7.0.10",
     "peerDependencies": {
         "@angular/common": "^9.1.12",
         "@angular/core": "^9.1.12"
