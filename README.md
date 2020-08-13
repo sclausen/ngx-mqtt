@@ -20,3 +20,10 @@ Those commands will autoupdate changelog and dependant package.json's
 
 Unfortunately command `npm publish` is broken due to nature of ng-packager. 
 It's substituted with `npm run publish`, which will correctly build and publish production build
+
+## Webpack shimming
+
+ngx-mqtt depends on mqtt package which uses node globals.
+In order to make it run inside browser it includes a postinstall script which patches Angular webpack config of the project it was imported into.
+To disable this, you have to set `mqtt-disable-hook` environmental variable while installing this package.
+
