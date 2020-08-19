@@ -17,7 +17,7 @@ jobs:
       - name: NPM Publish
         uses: JS-DevTools/npm-publish@v1
         with:
-          package: ./dist/package.json
+          package: ./dist/ngx-mqtt/package.json
           check-version: true
           token: ${{ secrets.NPM_TOKEN }}
           dry-run: true
