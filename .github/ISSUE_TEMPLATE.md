@@ -21,8 +21,8 @@ ISSUESNOT FOLLOWING THE ISSUE TEMPLATE WILL BE CLOSED WITHOUT INVESTIGATION.
 
 ## [Minimal working example](https://en.wikipedia.org/wiki/Minimal_working_example) of the problem with instructions
 <!--
-For bug reports please provide a *MINIMAL DEMO* of the problem in a separated github repository.
-Bug reports not having a reproduction will from now on immediately being closed!
+For bug reports please provide a *MINIMAL DEMO* of the problem on https://codesandbox.io/ or in a separated github repository.
+BUG REPORTS NOT HAVING A REPRODUCTION WILL FROM NOW ON IMMEDIATELY BEING CLOSED!
 -->
 
 ## What is the motivation / use case for changing the behavior?
