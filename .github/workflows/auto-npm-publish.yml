@@ -20,5 +20,4 @@ jobs:
           package: ./dist/ngx-mqtt/package.json
           check-version: true
           token: ${{ secrets.NPM_TOKEN }}
-          dry-run: true
 
