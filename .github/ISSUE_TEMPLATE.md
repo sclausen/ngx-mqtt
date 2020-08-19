@@ -19,7 +19,7 @@ ISSUESNOT FOLLOWING THE ISSUE TEMPLATE WILL BE CLOSED WITHOUT INVESTIGATION.
 <!-- Describe what the desired behavior would be. -->
 
 
-## Minimal reproduction of the problem with instructions
+## [Minimal working example](https://en.wikipedia.org/wiki/Minimal_working_example) of the problem with instructions
 <!--
 For bug reports please provide a *MINIMAL DEMO* of the problem in a separated github repository.
 Bug reports not having a reproduction will from now on immediately being closed!
