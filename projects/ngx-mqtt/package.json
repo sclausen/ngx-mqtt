@@ -3,13 +3,13 @@
     "scripts": {
       "postinstall": "node postinstall"
     },
-    "version": "7.0.10",
+    "version": "7.0.14",
     "peerDependencies": {
         "@angular/common": "^9.1.12",
         "@angular/core": "^9.1.12"
     },
     "dependencies": {
-        "mqtt": "4.1.0",
+        "mqtt": "4.2.1",
         "tslib": "^1.10.0"
     }
 }

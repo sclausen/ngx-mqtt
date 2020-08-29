@@ -1,7 +1,7 @@
 {
   "name": "ngx-mqtt",
   "description": "ngx mqtt client library",
-  "version": "7.0.12",
+  "version": "7.0.14",
   "repository": {
     "type": "git",
     "url": "https://github.com/sclausen/ngx-mqtt.git"
@@ -19,14 +19,16 @@
   "contributors": [
     {
       "name": "lpeterse"
+    },
+    {
+      "name": "nosovk"
     }
   ],
   "license": "MIT",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "preinstall": "npm i --prefix ./projects/ngx-mqtt",
-    "postinstall": "npm-install-peers",
+    "postinstall": "npm i --prefix ./projects/ngx-mqtt; npm-install-peers",
     "build": "ng build",
     "build:prod": "ng build --prod",
     "publishx": "npm run build:prod && npm publish dist/ngx-mqtt/",
