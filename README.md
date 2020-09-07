@@ -25,5 +25,6 @@ It's substituted with `npm run publish`, which will correctly build and publish 
 
 ngx-mqtt depends on mqtt package which uses node globals.
 In order to make it run inside browser it includes a postinstall script which patches Angular webpack config of the project it was imported into.
-To disable this, you have to set `mqtt-disable-hook` environmental variable while installing this package.
+To disable this, you have to set `MQTT_DISABLE_HOOK` environmental variable while installing this package.
+`MQTT_DISABLE_HOOK=true npm i`
 
