@@ -1,4 +1,5 @@
-if (process.env['mqtt-disable-hook']) {
+if (process.env['MQTT_DISABLE_HOOK']) {
+  console.info('NGX-MQTT: postinstall hook disabled, MQTT_DISABLE_HOOK')
   return 0;
 }
 
