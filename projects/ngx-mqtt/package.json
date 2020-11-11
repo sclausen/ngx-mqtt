@@ -3,10 +3,9 @@
     "scripts": {
         "postinstall": "node postinstall"
     },
-    "version": "8.0.0",
+    "version": "7.0.15",
     "peerDependencies": {
-        "@angular/common": "^10.2.2",
-        "@angular/core": "^10.2.2"
+        "@angular/common": ">=9.1.12"
     },
     "dependencies": {
         "mqtt": "4.2.1",
