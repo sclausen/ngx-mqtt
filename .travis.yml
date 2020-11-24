@@ -5,6 +5,9 @@ sudo: true
 node_js:
   - 10
 
+install:
+  - yarn
+
 script:
   npm test
 
