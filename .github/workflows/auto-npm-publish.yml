@@ -1,10 +1,11 @@
 name: auto-npm-publish
 on:
   push:
-    branches:
-      - master
+    tags:
+      - "*"  # This will run on any tag pushed. 
 jobs:
   publish:
+    # if: github.event.base_ref == 'refs/heads/master' uncomment this if any for master (main) branch
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
