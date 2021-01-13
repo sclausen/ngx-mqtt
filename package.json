@@ -1,7 +1,7 @@
 {
   "name": "ngx-mqtt",
   "description": "ngx mqtt client library",
-  "version": "7.0.8",
+  "version": "8.0.3",
   "repository": {
     "type": "git",
     "url": "https://github.com/sclausen/ngx-mqtt.git"
@@ -10,6 +10,7 @@
     "angular",
     "angular9",
     "angular10",
+    "angular11",
     "ngx",
     "mqtt"
   ],
@@ -19,14 +20,16 @@
   "contributors": [
     {
       "name": "lpeterse"
+    },
+    {
+      "name": "nosovk"
     }
   ],
   "license": "MIT",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "preinstall": "npm i --prefix ./projects/ngx-mqtt",
-    "postinstall": "npm-install-peers",
+    "postinstall": "npm i --prefix ./projects/ngx-mqtt; npm-install-peers",
     "build": "ng build",
     "build:prod": "ng build --prod",
     "publishx": "npm run build:prod && npm publish dist/ngx-mqtt/",
@@ -40,42 +43,43 @@
     "release:major": "npm run release -- --release-as major"
   },
   "peerDependencies": {
-    "@angular/animations": "~9.1.12",
-    "@angular/common": "~9.1.12",
-    "@angular/compiler": "~9.1.12",
-    "@angular/core": "~9.1.12",
-    "@angular/forms": "~9.1.12",
-    "@angular/platform-browser": "~9.1.12",
-    "@angular/platform-browser-dynamic": "~9.1.12",
-    "@angular/router": "~9.1.12",
-    "rxjs": "~6.5.4",
+    "@angular/animations": ">=11.0.0",
+    "@angular/common": ">=11.0.0",
+    "@angular/compiler": ">=11.0.0",
+    "@angular/core": ">=11.0.0",
+    "@angular/forms": ">=11.0.0",
+    "@angular/platform-browser": ">=11.0.0",
+    "@angular/platform-browser-dynamic": ">=11.0.0",
+    "@angular/router": ">=11.0.0",
+    "rxjs": "^6.5.4",
     "tslib": "^1.10.0",
-    "zone.js": "~0.10.2"
+    "zone.js": "^0.10.2"
   },
   "devDependencies": {
-    "@angular-devkit/build-angular": "~0.901.12",
-    "@angular-devkit/build-ng-packagr": "~0.901.12",
-    "@angular/cli": "~9.1.12",
-    "@angular/compiler-cli": "~9.1.12",
-    "@types/jasmine": "~3.5.0",
-    "@types/jasminewd2": "~2.0.3",
-    "@types/node": "^12.11.1",
-    "codelyzer": "^5.1.2",
+    "@angular-devkit/build-angular": ">=0.901.12",
+    "@angular-devkit/build-ng-packagr": ">=0.901.12",
+    "@angular/cli": ">=11.0.0",
+    "@angular/compiler-cli": ">=11.0.0",
+    "@types/jasmine": "^3.5.0",
+    "@types/jasminewd2": "^2.0.3",
+    "@types/node": ">=12.11.1",
+    "codelyzer": ">=5.1.2",
     "husky": "^4.2.5",
-    "jasmine-core": "~3.5.0",
-    "jasmine-spec-reporter": "~4.2.1",
-    "karma": "~5.0.0",
+    "jasmine-core": "^3.5.0",
+    "jasmine-spec-reporter": ">=4.2.1",
+    "karma": "^5.0.0",
     "karma-chrome-launcher": "~3.1.0",
-    "karma-coverage-istanbul-reporter": "~2.1.0",
-    "karma-jasmine": "~3.0.1",
+    "karma-coverage-istanbul-reporter": ">=2.1.0",
+    "karma-jasmine": ">=3.0.1",
     "karma-jasmine-html-reporter": "^1.4.2",
-    "ng-packagr": "^9.0.0",
+    "ng-packagr": ">=9.0.0",
     "npm-install-peers": "^1.2.1",
+    "prettier": "^2.2.1",
     "protractor": "~7.0.0",
-    "standard-version": "^8.0.2",
-    "ts-node": "~8.3.0",
+    "standard-version": ">=8.0.2",
+    "ts-node": ">=8.3.0",
     "tslint": "~6.1.0",
-    "typescript": "~3.8.3"
+    "typescript": ">=3.8.3"
   },
   "husky": {
     "hooks": {
