@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [8.0.4](https://github.com/sclausen/ngx-mqtt/compare/v8.0.3...v8.0.4) (2021-01-17)
+
+
+### Bug Fixes
+
+* github npm auto publish postinstall inside dev dir issue. ([d86b641](https://github.com/sclausen/ngx-mqtt/commit/d86b641757bc7731e855f0156d280dd6b32eb453))
+* incorrect path to package.json. ([b49c872](https://github.com/sclausen/ngx-mqtt/commit/b49c872942c9281db32ede299d411446f9cecf28))
+
 ### [8.0.4](https://github.com/sclausen/ngx-mqtt/compare/v8.0.6...v8.0.4) (2021-01-17)
 
 ### [8.0.6](https://github.com/sclausen/ngx-mqtt/compare/v8.0.3...v8.0.6) (2021-01-17)
