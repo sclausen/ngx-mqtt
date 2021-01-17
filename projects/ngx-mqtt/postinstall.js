@@ -6,7 +6,6 @@ if (process.env["MQTT_DISABLE_HOOK"]) {
   return 0;
 }
 
-<<<<<<< HEAD
 let f =
   "../../node_modules/@angular-devkit/build-angular/src/angular-cli-files/models/webpack-configs/browser.js";
 const cwd = process.cwd();
@@ -27,25 +26,6 @@ if (fs.existsSync(packageJsonPath)) {
     }
   }
 }
-=======
-const fs = require('fs');
-
-// to check if it's development directory
-// the .no-postinstall file is used
-// it doesn't exist in built library
-const noPostInstallPath = './.no-postinstall';
-try {
-  if (fs.existsSync(noPostInstallPath)) {
-    // don't run postinstall in the dev directory
-    return 0;
-  }
-} catch(err) {
-  console.error(err);
-  return 1;
-}
-
-const f = '../../node_modules/@angular-devkit/build-angular/src/angular-cli-files/models/webpack-configs/browser.js';
->>>>>>> pr/161
 
 fs.readFile(f, "utf8", function (err, data) {
   if (err) {

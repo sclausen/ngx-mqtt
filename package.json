@@ -1,7 +1,7 @@
 {
   "name": "ngx-mqtt",
   "description": "ngx mqtt client library",
-  "version": "8.0.6",
+  "version": "8.0.2",
   "repository": {
     "type": "git",
     "url": "https://github.com/sclausen/ngx-mqtt.git"
@@ -77,7 +77,6 @@
     "karma-jasmine-html-reporter": "^1.4.2",
     "ng-packagr": ">=9.0.0",
     "npm-install-peers": "^1.2.1",
-    "prettier": "^2.2.1",
     "protractor": "~7.0.0",
     "standard-version": ">=8.0.2",
     "ts-node": ">=8.3.0",
