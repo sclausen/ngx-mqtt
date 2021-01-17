@@ -2,6 +2,8 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [8.0.4](https://github.com/sclausen/ngx-mqtt/compare/v8.0.6...v8.0.4) (2021-01-17)
+
 ### [8.0.6](https://github.com/sclausen/ngx-mqtt/compare/v8.0.3...v8.0.6) (2021-01-17)
 
 
