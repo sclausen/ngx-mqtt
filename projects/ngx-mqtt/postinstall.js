@@ -5,28 +5,32 @@ if (process.env["MQTT_DISABLE_HOOK"]) {
   console.info("NGX-MQTT: postinstall hook disabled, MQTT_DISABLE_HOOK");
   return 0;
 }
-
-let f =
-  "../../node_modules/@angular-devkit/build-angular/src/angular-cli-files/models/webpack-configs/browser.js";
-const cwd = process.cwd();
+let f = path.join(
+    process.env.INIT_CWD,
+   "node_modules/@angular-devkit/build-angular/src/angular-cli-files/models/webpack-configs/browser.js"
+ );
 const packageJsonPath = path.join(
-  cwd,
+   process.env.INIT_CWD,
   "node_modules/@angular/core/package.json"
 );
 if (fs.existsSync(packageJsonPath)) {
+
   const content = fs.readFileSync(packageJsonPath, "utf-8");
   if (content) {
     const { version } = JSON.parse(content);
     if (version) {
-      let semv = new semver_1.SemVer(version);
-      if (semv.major >= 11) {
-        f =
-          "../../node_modules/@angular-devkit/build-angular/src/webpack/configs/browser.js";
+        let semv = new semver_1.SemVer(version);
+        console.info("MQTT: postinstall hook detected angular version", version)
+        if (semv.major >= 11) {
+            f =path.join(
+                process.env.INIT_CWD,
+               "node_modules/@angular-devkit/build-angular/src/webpack/configs/browser.js"
+             );
       }
     }
   }
 }
-
+console.info("MQTT: postinstall hook patching file", f)
 fs.readFile(f, "utf8", function (err, data) {
   if (err) {
     console.error(err);
