@@ -19,7 +19,7 @@ if (fs.existsSync(packageJsonPath)) {
     const { version } = JSON.parse(content);
     if (version) {
       let semv = new semver_1.SemVer(version);
-      if (semv.major >= 11) {
+      if (semv.gt('0.1100.0')) {
         f =
           "../../node_modules/@angular-devkit/build-angular/src/webpack/configs/browser.js";
       }
