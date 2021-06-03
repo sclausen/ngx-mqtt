@@ -1,6 +1,6 @@
 # ngx-mqtt [![npm](https://img.shields.io/npm/v/ngx-mqtt.svg)](https://www.npmjs.com/package/ngx-mqtt) [![Travis](https://img.shields.io/travis/sclausen/ngx-mqtt.svg)](https://travis-ci.org/sclausen/ngx-mqtt)
 
-This library isn't just a wrapper around MQTT.js for angular >= 2.
+This library isn't just a wrapper around MQTT.js for angular.
 It uses observables and takes care of subscription handling and message routing.
 
 For reasons of convenience, I removed the copied typings from mqtt.js and added it as a dev-dependency while still bundling the browserified latest version of it.
@@ -8,11 +8,10 @@ This means although you have the possibility to use `mqtt`, `mqtts`, `tcp`, `ssl
 
 If you have any issues using this library, please visit it's [homepage](https://sclausen.github.io/ngx-mqtt/) and look for similar issues in the issue tracker before you file a bug.
 
-## **ngx-mqtt >= 7 is only compatible with angular >= 9**
+## **ngx-mqtt >= 9 is only compatible with angular >= 12**
 
 ## Local development
 For local development all peer dependency automatically installed during install.
-Also please be aware that exact MQTT version used as dependency, you need to manually bump it if it will update.
 
 ## Publish new version
 To follow semver helper scripts was added `npm run release:patch` etc.
