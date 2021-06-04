@@ -12,18 +12,3 @@ If you have any issues using this library, please visit it's [homepage](https://
 
 ## Local development
 For local development all peer dependency automatically installed during install.
-
-## Publish new version
-To follow semver helper scripts was added `npm run release:patch` etc.
-Those commands will autoupdate changelog and dependant package.json's
-
-Unfortunately command `npm publish` is broken due to nature of ng-packager. 
-It's substituted with `npm run publish`, which will correctly build and publish production build
-
-## Webpack shimming
-
-ngx-mqtt depends on mqtt package which uses node globals.
-In order to make it run inside browser it includes a postinstall script which patches Angular webpack config of the project it was imported into.
-To disable this, you have to set `MQTT_DISABLE_HOOK` environmental variable while installing this package.
-`MQTT_DISABLE_HOOK=true npm i`
-
