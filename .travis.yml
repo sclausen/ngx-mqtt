@@ -3,7 +3,7 @@ language: node_js
 sudo: true
 
 node_js:
-  - 10
+  - 14.17.0
 
 install:
   - yarn
