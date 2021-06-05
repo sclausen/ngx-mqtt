@@ -26,4 +26,4 @@ before_install:
   - docker pull eclipse-mosquitto
 
 before_script:
-  - docker run -d -p 9001:9001 -v $(pwd)/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro eclipse-mosquitto
+  - docker run -d -p 9001:9001 -v $(pwd)/mosquitto/config/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro eclipse-mosquitto
