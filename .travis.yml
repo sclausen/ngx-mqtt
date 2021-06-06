@@ -5,9 +5,6 @@ sudo: true
 node_js:
   - 14.17.0
 
-install:
-  - yarn
-
 script:
   npm test
 
