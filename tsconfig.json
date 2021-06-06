@@ -14,6 +14,7 @@
     "declaration": false,
     "downlevelIteration": true,
     "paths": {
+      "@angular/*": [ "./node_modules/@angular/*" ],
       "ngx-mqtt": [
         "dist/ngx-mqtt/ngx-mqtt",
         "dist/ngx-mqtt"

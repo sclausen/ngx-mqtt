@@ -41,7 +41,7 @@ beforeEach(() => {
       }
     ]
   });
-  mqttService = TestBed.get(MqttService);
+  mqttService = TestBed.inject(MqttService);
 });
 
 afterEach(() => {
@@ -77,35 +77,23 @@ describe('MqttService', () => {
   });
 
   it('#observe', (done) => {
-    mqttService.observe('$SYS/broker/uptime').subscribe((_: IMqttMessage) => {
+    mqttService.observe('$SYS/broker/uptime').subscribe((message: IMqttMessage) => {
+      expect(message.payload).toBeDefined();
       done();
     });
   });
 
   it('#publish', (done) => {
-    mqttService.observe('ngx-mqtt/tests/publish/' + currentUuid).subscribe((_: IMqttMessage) => {
+    mqttService.observe('ngx-mqtt/tests/publish/' + currentUuid).subscribe((message: IMqttMessage) => {
+      expect(message.payload.toString()).toBe('publish');
       done();
     });
     mqttService.publish('ngx-mqtt/tests/publish/' + currentUuid, 'publish').subscribe(noop);
   });
 
-  it('#pipeablePublish', (done) => {
-    mqttService.observe('ngx-mqtt/tests/pipeablePublish/' + currentUuid).pipe(
-      scan<IMqttMessage, number>(acc => acc + 1, 0)
-    ).subscribe(count => {
-      if (count === 3) {
-        done();
-      }
-    });
-    of(null).pipe(
-      mergeMap(i => mqttService.publish('ngx-mqtt/tests/pipeablePublish/' + currentUuid, 'publish1')),
-      mergeMap(i => mqttService.publish('ngx-mqtt/tests/pipeablePublish/' + currentUuid, 'publish2')),
-      mergeMap(i => mqttService.publish('ngx-mqtt/tests/pipeablePublish/' + currentUuid, 'publish3'))
-    ).subscribe();
-  });
-
   it('#unsafePublish', (done) => {
-    mqttService.observe('ngx-mqtt/tests/unsafePublish/' + currentUuid).subscribe((_: IMqttMessage) => {
+    mqttService.observe('ngx-mqtt/tests/unsafePublish/' + currentUuid).subscribe((message: IMqttMessage) => {
+      expect(message.payload.toString()).toBe('unsafePublish');
       done();
     });
     mqttService.unsafePublish('ngx-mqtt/tests/unsafePublish/' + currentUuid, 'unsafePublish');

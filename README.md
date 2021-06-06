@@ -7,7 +7,7 @@ Since it's based on the browserified version of mqtt.js, this means although you
 
 If you have any issues using this library, please visit it's [homepage](https://sclausen.github.io/ngx-mqtt/) and look for similar issues in the issue tracker before you file a bug.
 
-## **ngx-mqtt >= 9 is only compatible with angular >= 12**
+## **ngx-mqtt >= 7 is only compatible with angular >= 9**
 
 ## Local development
 For local development all peer dependency automatically installed during install.
