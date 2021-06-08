@@ -3,10 +3,7 @@ language: node_js
 sudo: true
 
 node_js:
-  - 10
-
-install:
-  - yarn
+  - 14.17.0
 
 script:
   npm test
@@ -22,7 +19,8 @@ services:
   - docker
 
 before_install:
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
   - docker pull eclipse-mosquitto
 
 before_script:
-  - docker run -d -p 9001:9001 -v $(pwd)/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro eclipse-mosquitto
+  - docker run -d -p 9001:9001 -v $(pwd)/mosquitto/config/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro eclipse-mosquitto

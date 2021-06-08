@@ -1,17 +1,16 @@
 import {EventEmitter, Inject, Injectable} from '@angular/core';
-import {connect, IClientSubscribeOptions, ISubscriptionGrant} from 'mqtt';
+import { connect, IClientPublishOptions, IClientSubscribeOptions, ISubscriptionGrant, MqttClient } from 'mqtt-browser';
+import { Packet } from 'mqtt-packet';
 import * as extend from 'xtend';
 
 import {BehaviorSubject, merge, Observable, Observer, Subject, Subscription, Unsubscribable, using} from 'rxjs';
 import {filter, publish, publishReplay, refCount} from 'rxjs/operators';
 
 import {
-  IMqttClient,
   IMqttMessage,
   IMqttServiceOptions,
   IOnConnectEvent,
   IOnErrorEvent,
-  IOnMessageEvent,
   IOnPacketreceiveEvent,
   IOnPacketsendEvent,
   IOnSubackEvent,
@@ -38,7 +37,7 @@ export class MqttService {
    */
   constructor(
     @Inject(MqttServiceConfig) private options: IMqttServiceOptions,
-    @Inject(MqttClientService) private client?: IMqttClient
+    @Inject(MqttClientService) private client?: MqttClient
   ) {
     if (options.connectOnCreate !== false) {
       this.connect({}, client);
@@ -85,7 +84,7 @@ export class MqttService {
   }
 
   /** An EventEmitter to listen to message events */
-  public get onMessage(): EventEmitter<IOnMessageEvent> {
+  public get onMessage(): EventEmitter<Packet> {
     return this._onMessage;
   }
 
@@ -106,7 +105,7 @@ export class MqttService {
   /** a map of all mqtt observables by filter */
   public observables: { [filterString: string]: Observable<IMqttMessage> } = {};
   /** the connection state */
-  public state: BehaviorSubject<MqttConnectionState> = new BehaviorSubject(MqttConnectionState.CLOSED);
+  public state: Subject<MqttConnectionState> = new BehaviorSubject<MqttConnectionState>(MqttConnectionState.CLOSED);
   /** an observable of the last mqtt message */
   public messages: Subject<IMqttMessage> = new Subject<IMqttMessage>();
 
@@ -121,7 +120,7 @@ export class MqttService {
   private _onOffline: EventEmitter<void> = new EventEmitter<void>();
   private _onError: EventEmitter<IOnErrorEvent> = new EventEmitter<IOnErrorEvent>();
   private _onEnd: EventEmitter<void> = new EventEmitter<void>();
-  private _onMessage: EventEmitter<IOnMessageEvent> = new EventEmitter<IOnMessageEvent>();
+  private _onMessage: EventEmitter<Packet> = new EventEmitter<Packet>();
   private _onSuback: EventEmitter<IOnSubackEvent> = new EventEmitter<IOnSubackEvent>();
   private _onPacketsend: EventEmitter<IOnPacketsendEvent> = new EventEmitter<IOnPacketsendEvent>();
   private _onPacketreceive: EventEmitter<IOnPacketreceiveEvent> = new EventEmitter<IOnPacketreceiveEvent>();
@@ -168,7 +167,7 @@ export class MqttService {
   /**
    * connect manually connects to the mqtt broker.
    */
-  public connect(opts?: IMqttServiceOptions, client?: IMqttClient) {
+  public connect(opts?: IMqttServiceOptions, client?: MqttClient) {
     const options = extend(this.options || {}, opts);
     const protocol = options.protocol || 'ws';
     const hostname = options.hostname || 'localhost';
@@ -191,7 +190,7 @@ export class MqttService {
     }
 
     if (!client) {
-      this.client = (connect(this._url, mergedOptions) as IMqttClient);
+      this.client = connect(this._url, mergedOptions);
     } else {
       this.client = client;
     }
@@ -202,7 +201,7 @@ export class MqttService {
     this.client.on('close', this._handleOnClose);
     this.client.on('offline', this._handleOnOffline);
     this.client.on('error', this._handleOnError);
-    this.client.stream.on('error', this._handleOnError);
+    (this.client as any).stream.on('error', this._handleOnError);
     this.client.on('end', this._handleOnEnd);
     this.client.on('message', this._handleOnMessage);
     this.client.on('packetsend', this._handleOnPacketsend);
@@ -297,14 +296,14 @@ export class MqttService {
    * the observable will emit an empty value and completes, if publishing was successful
    * or throws an error, if the publication fails.
    */
-  public publish(topic: string, message: string | Buffer, options?: IPublishOptions): Observable<void> {
+  public publish(topic: string, message: string | Buffer, options: IClientPublishOptions = {}): Observable<void> {
     if (!this.client) {
       throw new Error('mqtt client not connected');
     }
     return Observable.create((obs: Observer<void>) => {
-      this.client.publish(topic, message, options, (err: Error) => {
-        if (err) {
-          obs.error(err);
+      this.client.publish(topic, message, options, (error: Error|undefined) => {
+        if (error) {
+          obs.error(error);
         } else {
           obs.next(null);
           obs.complete();
@@ -317,13 +316,13 @@ export class MqttService {
    * This method publishes a message for a topic with optional options.
    * If an error occurs, it will throw.
    */
-  public unsafePublish(topic: string, message: string | Buffer, options?: IPublishOptions): void {
+  public unsafePublish(topic: string, message: string | Buffer, options: IPublishOptions = {}): void {
     if (!this.client) {
       throw new Error('mqtt client not connected');
     }
-    this.client.publish(topic, message, options, (err: Error) => {
-      if (err) {
-        throw (err);
+    this.client.publish(topic, message, options, (error: Error|undefined) => {
+      if (error) {
+        throw (error);
       }
     });
   }
@@ -366,10 +365,10 @@ export class MqttService {
     this._onEnd.emit();
   }
 
-  private _handleOnMessage = (topic: string, msg, packet: IMqttMessage) => {
+  private _handleOnMessage = (topic: string, payload: Buffer, packet: Packet) => {
     this._onMessage.emit(packet);
     if (packet.cmd === 'publish') {
-      this.messages.next(packet);
+      this.messages.next(packet as any);
     }
   }
 

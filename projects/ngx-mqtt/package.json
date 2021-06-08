@@ -1,15 +1,19 @@
 {
-    "name": "ngx-mqtt",
-    "scripts": {
-        "postinstall": "node postinstall"
-    },
-    "version": "8.0.2",
-    "peerDependencies": {
-        "@angular/common": ">=11.0.0",
-        "@angular/core": ">=11.0.0"
-    },
-    "dependencies": {
-        "mqtt": "4.2.1",
-        "tslib": ">=1.10.0"
-    }
+  "name": "ngx-mqtt",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sclausen/ngx-mqtt.git"
+  },
+  "version": "9.0.5",
+  "license": "MIT",
+  "peerDependencies": {
+    "@angular/common": ">=9.0.0",
+    "@angular/core": ">=9.0.0"
+  },
+  "dependencies": {
+    "mqtt-browser": "4.2.7",
+    "mqtt-packet": "6.10.0",
+    "tslib": "2.1.0",
+    "xtend": "4.0.2"
+  }
 }
