@@ -4,6 +4,9 @@
   "lib": {
     "entryFile": "src/public-api.ts"
   },
+  "assets": [
+    "LICENSE"
+  ],
   "allowedNonPeerDependencies": [
     "mqtt-browser",
     "mqtt-packet",
