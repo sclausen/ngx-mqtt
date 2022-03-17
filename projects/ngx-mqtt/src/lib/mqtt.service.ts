@@ -102,10 +102,16 @@ export class MqttService {
   public get onSuback(): EventEmitter<IOnSubackEvent> {
     return this._onSuback;
   }
+  
+  /** An actual connection state **/
+  public get connectionState(): MqttConnectionState {
+    return this.state.value;
+  }
+  
   /** a map of all mqtt observables by filter */
   public observables: { [filterString: string]: Observable<IMqttMessage> } = {};
   /** the connection state */
-  public state: Subject<MqttConnectionState> = new BehaviorSubject<MqttConnectionState>(MqttConnectionState.CLOSED);
+  public state: BehaviorSubject<MqttConnectionState> = new BehaviorSubject<MqttConnectionState>(MqttConnectionState.CLOSED);
   /** an observable of the last mqtt message */
   public messages: Subject<IMqttMessage> = new Subject<IMqttMessage>();
 
