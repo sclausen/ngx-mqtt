@@ -36,21 +36,21 @@
     "test": "ng test --watch false --browsers ChromeHeadless"
   },
   "dependencies": {
-    "@angular/common": "^13.3.4",
-    "@angular/compiler": "^13.3.4",
-    "@angular/core": "^13.3.4",
-    "@angular/platform-browser": "^13.3.4",
-    "@angular/platform-browser-dynamic": "^13.3.4",
+    "@angular/common": "14.0.7",
+    "@angular/compiler": "14.0.7",
+    "@angular/core": "14.0.7",
+    "@angular/platform-browser": "14.0.7",
+    "@angular/platform-browser-dynamic": "14.0.7",
     "buffer": "^6.0.3",
     "rxjs": "^7.5.5",
     "tslib": "^2.4.0",
     "zone.js": "~0.11.5"
   },
   "devDependencies": {
-    "@angular-builders/custom-webpack": "^13.1.0",
-    "@angular-devkit/build-angular": "^13.3.3",
-    "@angular/cli": "^13.3.3",
-    "@angular/compiler-cli": "^13.3.4",
+    "@angular-builders/custom-webpack": "14.0.0",
+    "@angular-devkit/build-angular": "^14.1.0",
+    "@angular/cli": "14.0.7",
+    "@angular/compiler-cli": "14.0.7",
     "@types/estree": "0.0.48",
     "@types/jasmine": "~3.6.0",
     "@types/node": "^12.20.13",
@@ -61,7 +61,7 @@
     "karma-coverage": "~2.0.3",
     "karma-jasmine": "~4.0.0",
     "karma-jasmine-html-reporter": "^1.5.0",
-    "ng-packagr": "^13.3.1",
+    "ng-packagr": "14.0.4",
     "typescript": "4.6.3"
   }
 }
