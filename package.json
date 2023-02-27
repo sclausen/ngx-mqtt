@@ -1,6 +1,6 @@
 {
   "name": "ngx-mqtt",
-  "version": "15.0.0-alpha.0",
+  "version": "0.0.0",
   "description": "ngx mqtt client library",
   "repository": {
     "type": "git",
@@ -30,6 +30,7 @@
     "ng": "ng",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
+    "publishx": "npm run build && npm publish dist/ngx-mqtt/",
     "test": "ng test"
   },
   "private": true,
