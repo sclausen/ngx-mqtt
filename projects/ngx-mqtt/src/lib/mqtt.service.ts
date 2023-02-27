@@ -1,10 +1,9 @@
-import {EventEmitter, Inject, Injectable} from '@angular/core';
+import { EventEmitter, Inject, Injectable } from '@angular/core';
 import { connect, IClientPublishOptions, IClientSubscribeOptions, ISubscriptionGrant, MqttClient } from 'mqtt-browser';
 import { Packet } from 'mqtt-packet';
-import * as extend from 'xtend';
 
-import {BehaviorSubject, merge, Observable, Observer, Subject, Subscription, Unsubscribable, using} from 'rxjs';
-import {filter, publish, publishReplay, refCount} from 'rxjs/operators';
+import { BehaviorSubject, merge, Observable, Observer, Subject, Subscription, Unsubscribable, using } from 'rxjs';
+import { filter, publish, publishReplay, refCount } from 'rxjs/operators';
 
 import {
   IMqttMessage,
@@ -18,7 +17,34 @@ import {
   MqttConnectionState
 } from './mqtt.model';
 
-import {MqttClientService, MqttServiceConfig} from './mqtt.module';
+import { MqttClientService, MqttServiceConfig } from './mqtt.module';
+
+// A javascript function that takes two objects and merges them recursively
+function mergeDeep(target: any, ...sources: any[]): any {
+  if (!sources.length) {
+    return target;
+  }
+  const source = sources.shift();
+
+  if (isObject(target) && isObject(source)) {
+    for (const key in source) {
+      if (isObject(source[key])) {
+        if (!target[key]) {
+          Object.assign(target, { [key]: {} });
+        }
+        mergeDeep(target[key], source[key]);
+      } else {
+        Object.assign(target, { [key]: source[key] });
+      }
+    }
+  }
+
+  return mergeDeep(target, ...sources);
+}
+
+function isObject(item: any): item is Object {
+  return item && typeof item === 'object' && !Array.isArray(item);
+}
 
 /**
  * With an instance of MqttService, you can observe and subscribe to MQTT in multiple places, e.g. in different components,
@@ -29,6 +55,7 @@ import {MqttClientService, MqttServiceConfig} from './mqtt.module';
   providedIn: 'root',
 })
 export class MqttService {
+  private client!: MqttClient;
 
   /**
    * The constructor needs [connection options]{@link IMqttServiceOptions} regarding the broker and some
@@ -37,7 +64,7 @@ export class MqttService {
    */
   constructor(
     @Inject(MqttServiceConfig) private options: IMqttServiceOptions,
-    @Inject(MqttClientService) private client?: MqttClient
+    @Inject(MqttClientService) client?: MqttClient
   ) {
     if (options.connectOnCreate !== false) {
       this.connect({}, client);
@@ -112,7 +139,7 @@ export class MqttService {
   private _clientId = this._generateClientId();
   private _connectTimeout = 10000;
   private _reconnectPeriod = 10000;
-  private _url: string | undefined = undefined;
+  private _url!: string;
 
   private _onConnect: EventEmitter<IOnConnectEvent> = new EventEmitter<IOnConnectEvent>();
   private _onReconnect: EventEmitter<void> = new EventEmitter<void>();
@@ -168,7 +195,7 @@ export class MqttService {
    * connect manually connects to the mqtt broker.
    */
   public connect(opts?: IMqttServiceOptions, client?: MqttClient) {
-    const options = extend(this.options || {}, opts);
+    const options = mergeDeep(this.options || {}, opts);
     const protocol = options.protocol || 'ws';
     const hostname = options.hostname || 'localhost';
     if (options.url) {
@@ -179,7 +206,7 @@ export class MqttService {
       this._url += options.path ? `${options.path}` : '';
     }
     this.state.next(MqttConnectionState.CONNECTING);
-    const mergedOptions = extend({
+    const mergedOptions = mergeDeep({
       clientId: this._clientId,
       reconnectPeriod: this._reconnectPeriod,
       connectTimeout: this._connectTimeout
@@ -226,7 +253,7 @@ export class MqttService {
    * The last one unsubscribing this filter executes a mqtt unsubscribe.
    * Every new subscriber gets the latest message.
    */
-  public observeRetained(filterString: string, opts: IClientSubscribeOptions = {qos: 1}): Observable<IMqttMessage> {
+  public observeRetained(filterString: string, opts: IClientSubscribeOptions = { qos: 1 }): Observable<IMqttMessage> {
     return this._generalObserve(filterString, () => publishReplay(1), opts);
   }
 
@@ -236,7 +263,7 @@ export class MqttService {
    * The first one subscribing to the resulting observable executes a mqtt subscribe.
    * The last one unsubscribing this filter executes a mqtt unsubscribe.
    */
-  public observe(filterString: string, opts: IClientSubscribeOptions = {qos: 1}): Observable<IMqttMessage> {
+  public observe(filterString: string, opts: IClientSubscribeOptions = { qos: 1 }): Observable<IMqttMessage> {
     return this._generalObserve(filterString, () => publish(), opts);
   }
 
@@ -259,7 +286,7 @@ export class MqttService {
         // refcount is decreased on unsubscribe.
         () => {
           const subscription: Subscription = new Subscription();
-          this.client.subscribe(filterString, opts, (err, granted: ISubscriptionGrant[]) => {
+          this.client.subscribe(filterString, opts, (err: any, granted: ISubscriptionGrant[]) => {
             if (granted) { // granted can be undefined when an error occurs when the client is disconnecting
               granted.forEach((granted_: ISubscriptionGrant) => {
                 if (granted_.qos === 128) {
@@ -267,7 +294,7 @@ export class MqttService {
                   this.client.unsubscribe(granted_.topic);
                   rejected.error(`subscription for '${granted_.topic}' rejected!`);
                 }
-                this._onSuback.emit({filter: filterString, granted: granted_.qos !== 128});
+                this._onSuback.emit({ filter: filterString, granted: granted_.qos !== 128 });
               });
             }
           });
@@ -301,11 +328,11 @@ export class MqttService {
       throw new Error('mqtt client not connected');
     }
     return Observable.create((obs: Observer<void>) => {
-      this.client.publish(topic, message, options, (error: Error|undefined) => {
+      this.client.publish(topic, message, options, (error: Error | undefined) => {
         if (error) {
           obs.error(error);
         } else {
-          obs.next(null);
+          obs.next();
           obs.complete();
         }
       });
@@ -320,7 +347,7 @@ export class MqttService {
     if (!this.client) {
       throw new Error('mqtt client not connected');
     }
-    this.client.publish(topic, message, options, (error: Error|undefined) => {
+    this.client.publish(topic, message, options, (error: Error | undefined) => {
       if (error) {
         throw (error);
       }

@@ -27,16 +27,14 @@
         "test": {
           "builder": "@angular-devkit/build-angular:karma",
           "options": {
-            "main": "projects/ngx-mqtt/src/test.ts",
             "tsConfig": "projects/ngx-mqtt/tsconfig.spec.json",
-            "karmaConfig": "projects/ngx-mqtt/karma.conf.js"
+            "polyfills": [
+              "zone.js",
+              "zone.js/testing"
+            ]
           }
         }
       }
-    }
-  },
-  "cli": {
-    "analytics": false
-  },
-  "defaultProject": "ngx-mqtt"
+    }    
+  }
 }

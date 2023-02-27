@@ -22,7 +22,7 @@ const config: IMqttServiceOptions = {
 };
 
 const currentUuid = generateUuid();
-let originalTimeout;
+let originalTimeout: number;
 let mqttService: MqttService;
 
 beforeEach(() => {

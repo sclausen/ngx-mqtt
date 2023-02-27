@@ -1,10 +1,24 @@
-# ngx-mqtt [![npm](https://img.shields.io/npm/v/ngx-mqtt.svg)](https://www.npmjs.com/package/ngx-mqtt) [![Travis](https://img.shields.io/travis/sclausen/ngx-mqtt.svg)](https://travis-ci.org/sclausen/ngx-mqtt)
+# NgxMqtt
 
-This library isn't just a wrapper around MQTT.js for angular.
-It uses observables and takes care of subscription handling and message routing.
+This library was generated with [Angular CLI](https://github.com/angular/angular-cli) version 15.1.0.
 
-This means although you have the possibility of mqtt.js to use `mqtt`, `mqtts`, `tcp`, `ssl`, `wx` or `wxs` as the protocol in the client options, you can't, because this is a browser library where you can't conntect with something other than websockets. You also can't use `key`, `cert` and `ca` for the same reasons.
+## Code scaffolding
 
-If you have any issues using this library, please visit it's [homepage](https://sclausen.github.io/ngx-mqtt/) and look for similar issues in the issue tracker before you file a bug.
+Run `ng generate component component-name --project ngx-mqtt` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module --project ngx-mqtt`.
+> Note: Don't forget to add `--project ngx-mqtt` or else it will be added to the default project in your `angular.json` file. 
 
-## **ngx-mqtt >= 7 is only compatible with angular >= 9**
+## Build
+
+Run `ng build ngx-mqtt` to build the project. The build artifacts will be stored in the `dist/` directory.
+
+## Publishing
+
+After building your library with `ng build ngx-mqtt`, go to the dist folder `cd dist/ngx-mqtt` and run `npm publish`.
+
+## Running unit tests
+
+Run `ng test ngx-mqtt` to execute the unit tests via [Karma](https://karma-runner.github.io).
+
+## Further help
+
+To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.io/cli) page.

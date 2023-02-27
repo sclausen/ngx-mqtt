@@ -1,15 +1,12 @@
 {
   "$schema": "../../node_modules/ng-packagr/ng-package.schema.json",
   "dest": "../../dist/ngx-mqtt",
-  "lib": {
-    "entryFile": "src/public-api.ts"
-  },
-  "assets": [
-    "LICENSE"
-  ],
   "allowedNonPeerDependencies": [
     "mqtt-browser",
     "mqtt-packet",
-    "xtend"
-  ]
+    "mqtt"
+  ],
+  "lib": {
+    "entryFile": "src/public-api.ts"
+  }
 }
