@@ -400,11 +400,11 @@ export class MqttService {
   }
 
   private _handleOnPacketsend = (e: IOnPacketsendEvent) => {
-    this._onPacketsend.emit();
+    this._onPacketsend.emit(e);
   }
 
   private _handleOnPacketreceive = (e: IOnPacketreceiveEvent) => {
-    this._onPacketreceive.emit();
+    this._onPacketreceive.emit(e);
   }
 
   private _generateClientId() {

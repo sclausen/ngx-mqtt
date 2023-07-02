@@ -1,6 +1,6 @@
 {
   "name": "ngx-mqtt",
-  "version": "16.0.0",
+  "version": "16.1.0",
   "license": "MIT",
   "peerDependencies": {
     "@angular/common": "^16.0.3",
