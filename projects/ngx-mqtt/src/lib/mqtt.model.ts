@@ -1,10 +1,9 @@
-import { Stream } from 'stream';
-import { MqttClient, IClientOptions, IClientPublishOptions, IPacket } from 'mqtt-browser';
+import { IClientOptions, IClientPublishOptions } from 'mqtt';
 
 export enum MqttConnectionState {
   CLOSED,
   CONNECTING,
-  CONNECTED
+  CONNECTED,
 }
 
 export interface IMqttServiceOptions extends IClientOptions {
@@ -24,33 +23,4 @@ export interface IMqttServiceOptions extends IClientOptions {
   url?: string;
 }
 
-export interface IMqttMessage extends IPacket {
-  /** the mqtt topic to which this message was published to */
-  topic: string;
-  /** the payload */
-  payload: Uint8Array;
-  /** the quality of service */
-  qos: number;
-  /** if this message is a retained message */
-  retain: boolean;
-  /** if this message is a duplicate */
-  dup: boolean;
-}
-
-export interface IPublishOptions extends IClientPublishOptions { }
-export interface IOnConnectEvent extends IMqttMessage { }
-export interface IOnErrorEvent extends Error {
-  type?: string;
-}
-export interface IOnMessageEvent extends IMqttMessage { }
-export interface IOnSubackEvent {
-  granted: boolean;
-  filter: string;
-}
-
-export interface IMqttClient extends MqttClient {
-  stream: Stream;
-}
-
-export interface IOnPacketsendEvent extends IPacket { }
-export interface IOnPacketreceiveEvent extends IPacket { }
+export interface IPublishOptions extends IClientPublishOptions {}

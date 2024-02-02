@@ -1,14 +1,13 @@
 {
   "name": "ngx-mqtt",
-  "version": "16.1.0",
+  "version": "17.0.0",
   "license": "MIT",
   "peerDependencies": {
-    "@angular/common": "^16.0.3",
-    "@angular/core": "^16.0.3"
+    "@angular/common": ">=14.0.0",
+    "@angular/core": ">=14.0.0"
   },
   "dependencies": {
-    "mqtt-browser": "4.3.7",
-    "mqtt-packet": "^6.10.0",
+    "mqtt": "5.3.5",
     "tslib": "^2.3.0"
   },
   "sideEffects": false

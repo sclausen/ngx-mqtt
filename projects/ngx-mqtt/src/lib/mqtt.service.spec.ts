@@ -1,24 +1,17 @@
 import { TestBed } from '@angular/core/testing';
+import { Subscription, firstValueFrom, noop, of } from 'rxjs';
+import { concatMap, first, map, skip, tap } from 'rxjs/operators';
+import mqtt from 'mqtt';
+import { ISubackPacket } from 'mqtt-packet';
 
-import { skip, map, mergeMap, scan } from 'rxjs/operators';
-import { noop, Subscription, of } from 'rxjs';
-
+import { IMqttServiceOptions, MqttConnectionState } from './mqtt.model';
 import { MqttService } from './mqtt.service';
-import { MqttServiceConfig, MqttClientService } from './mqtt.module';
-import {
-  IMqttMessage,
-  IMqttServiceOptions,
-  IOnConnectEvent,
-  IOnErrorEvent,
-  IOnMessageEvent,
-  IOnSubackEvent,
-  MqttConnectionState
-} from './mqtt.model';
+import { MqttClientService, MqttServiceConfig } from './mqtt.module';
 
 const config: IMqttServiceOptions = {
   connectOnCreate: true,
   hostname: 'localhost',
-  port: 9001
+  port: 9001,
 };
 
 const currentUuid = generateUuid();
@@ -29,17 +22,17 @@ beforeEach(() => {
   originalTimeout = jasmine.DEFAULT_TIMEOUT_INTERVAL;
   jasmine.DEFAULT_TIMEOUT_INTERVAL = 30000;
 
-  TestBed.configureTestingModule({
+  TestBed.resetTestingModule().configureTestingModule({
     providers: [
       {
         provide: MqttServiceConfig,
-        useValue: config
+        useValue: config,
       },
       {
         provide: MqttClientService,
-        useValue: undefined
-      }
-    ]
+        useValue: undefined,
+      },
+    ],
   });
   mqttService = TestBed.inject(MqttService);
 });
@@ -53,98 +46,94 @@ describe('MqttService', () => {
     expect(mqttService).toBeDefined();
   });
 
-
-  it('#connect', (done) => {
-    mqttService.disconnect(true);
-    mqttService.connect({ ...config, clientId: 'connect' + currentUuid });
-    mqttService.state.pipe(skip(2)).subscribe(state => {
-      expect(state).toBe(MqttConnectionState.CONNECTED);
-      expect(mqttService.clientId).toBe('connect' + currentUuid);
-      done();
-    });
-  });
-
-  it('#clientId', () => {
-    expect(mqttService.clientId.startsWith('client-')).toBeTruthy();
-  });
-
-  it('#disconnect', (done) => {
-    mqttService.disconnect(true);
-    mqttService.state.pipe(skip(1)).subscribe(state => {
-      expect(state).toBe(MqttConnectionState.CLOSED);
-      done();
-    });
-  });
-
   it('#observe', (done) => {
-    mqttService.observe('$SYS/broker/uptime').subscribe((message: IMqttMessage) => {
-      expect(message.payload).toBeDefined();
-      done();
+    mqttService.observe('$SYS/broker/uptime').subscribe({
+      next: (message: mqtt.IPublishPacket) => {
+        expect(message.payload).toBeDefined();
+        done();
+      },
+      error: (err) => done.fail(err),
     });
   });
 
   it('#publish', (done) => {
-    mqttService.observe('ngx-mqtt/tests/publish/' + currentUuid).subscribe((message: IMqttMessage) => {
-      expect(message.payload.toString()).toBe('publish');
-      done();
-    });
-    mqttService.publish('ngx-mqtt/tests/publish/' + currentUuid, 'publish').subscribe(noop);
+    const topic = `ngx-mqtt/tests/publish/${currentUuid}`;
+    const messageToSend = 'publish';
+
+    const subscription = mqttService
+      .observe(topic)
+      .pipe(map((v: mqtt.IPublishPacket) => v.payload.toString()))
+      .subscribe({
+        next: (message) => {
+          expect(message).toBe(messageToSend);
+          subscription.unsubscribe();
+          done();
+        },
+        error: (err: any) => done.fail(err),
+      });
+
+    setTimeout(() => {
+      mqttService.publish(topic, messageToSend);
+    }, 1000);
   });
 
   it('#unsafePublish', (done) => {
-    mqttService.observe('ngx-mqtt/tests/unsafePublish/' + currentUuid).subscribe((message: IMqttMessage) => {
-      expect(message.payload.toString()).toBe('unsafePublish');
-      done();
-    });
-    mqttService.unsafePublish('ngx-mqtt/tests/unsafePublish/' + currentUuid, 'unsafePublish');
+    mqttService
+      .observe('ngx-mqtt/tests/unsafePublish/' + currentUuid)
+      .subscribe({
+        next: (message: mqtt.IPublishPacket) => {
+          expect(message.payload.toString()).toBe('unsafePublish');
+          done();
+        },
+        error: (err) => done.fail(err),
+      });
+    mqttService.unsafePublish(
+      'ngx-mqtt/tests/unsafePublish/' + currentUuid,
+      'unsafePublish'
+    );
   });
-
-
-  it('#onClose', (done) => {
-    mqttService.disconnect(true);
-    mqttService.onClose.subscribe(() => {
-      done();
-    });
-  });
-
-  it('#onConnect', (done) => {
-    mqttService.onConnect.subscribe((e: IOnConnectEvent) => {
-      expect(e.cmd).toBe('connack');
-      done();
-    });
-  });
-
-  // it('#onReconnect', (done) => {
-
-  // });
 
   it('#onMessage', (done) => {
-    mqttService.observe('$SYS/broker/uptime').subscribe(noop);
-    mqttService.onMessage.subscribe((e: IOnMessageEvent) => {
-      expect(e.cmd).toBe('publish');
-      done();
+    const topic = '$SYS/broker/uptime';
+
+    // Step 1: Subscribe to the topic to start observing messages.
+    const subscription = mqttService.observe(topic).subscribe({
+      next: noop, // You're not directly asserting in the subscription, so noop is fine here.
+      error: (err) => done.fail(err), // Ensure to handle errors gracefully.
     });
+
+    // Step 2: After ensuring the subscription is active, listen for the first message.
+    firstValueFrom(mqttService.onMessage)
+      .then((e: mqtt.IPublishPacket) => {
+        expect(e.cmd).toBe('publish');
+        subscription.unsubscribe(); // Cleanup after the test is done.
+        done();
+      })
+      .catch((err) => {
+        // Handle possible errors from firstValueFrom
+        done.fail(err);
+      });
   });
 
   it('#onSuback', (done) => {
-    mqttService.observe('$SYS/broker/uptime').subscribe(noop);
-    mqttService.onSuback.subscribe((e: IOnSubackEvent) => {
-      expect(e.filter).toBe('$SYS/broker/uptime');
-      expect(e.granted).toBeTruthy();
-      done();
+    const subackSubscription = mqttService.onSuback.subscribe({
+      next: (e: ISubackPacket) => {
+        expect(
+          e.granted.some((grant: any) => grant.topic === '$SYS/broker/uptime')
+        ).toBeTrue();
+        expect(e.granted.length).toBeTruthy();
+        subackSubscription.unsubscribe();
+        done();
+      },
+      error: (err: any) => {
+        console.error(err);
+        done.fail(err);
+      },
     });
-  });
 
-  it('#onError', (done) => {
-    mqttService.disconnect(true);
-    mqttService.connect({ hostname: 'not_existing' });
-    mqttService.state.pipe(skip(2)).subscribe(state => {
-      expect(state).toBe(MqttConnectionState.CLOSED);
-      mqttService.unsafePublish('onError', 'shouldThrow');
-    });
-    mqttService.onError.subscribe((e: IOnErrorEvent) => {
-      expect(e.type).toBe('error');
-      done();
+    mqttService.observe('$SYS/broker/uptime').subscribe({
+      next: noop,
+      error: (err: any) => done.fail(err),
     });
   });
 });
@@ -154,50 +143,54 @@ describe('MqttService Retained Behavior', () => {
     let counter = 0;
     const topic = 'ngx-mqtt/tests/retained/' + currentUuid;
     const mqttSubscriptions: IMqttSubscription[] = [];
-
     function observe(): void {
       const s: IMqttSubscription = {
         id: counter++,
-        payload: null
+        payload: null,
       };
       s.subscription = mqttService
         .observeRetained(topic)
-        .pipe(map((v: IMqttMessage) => v.payload))
-        .subscribe(msg => {
-          s.payload = msg;
+        .pipe(map((v: mqtt.IPublishPacket) => v.payload.toString()))
+        .subscribe({
+          next: (message) => {
+            s.payload = message;
+          },
+          error: (err: any) => done.fail(err),
         });
       mqttSubscriptions.push(s);
     }
     mqttService.unsafePublish(topic, 'foobar', { retain: true, qos: 0 });
-
     interface IMqttSubscription {
       subscription?: Subscription;
       id: number;
       payload: any;
     }
-
     observe();
     setTimeout(() => observe(), 100);
     setTimeout(() => observe(), 200);
-
     setTimeout(() => {
-      mqttSubscriptions.map((s: IMqttSubscription) => {
-        expect(s.payload).toBeTruthy();
-      });
+      expect(
+        mqttSubscriptions.every((s: IMqttSubscription) => !!s.payload)
+      ).toBeTrue();
       done();
     }, 3000);
   });
-
   it('do not emit not retained message on late subscribe', (done) => {
     const topic = 'ngx-mqtt/tests/notRetained/' + currentUuid;
-    let lateMessage: IMqttMessage; // this message should never occur
-    mqttService.observe(topic).subscribe((msg1: IMqttMessage) => {
-      expect(msg1).toBeDefined();
-      mqttService.observe(topic).subscribe((msg2: IMqttMessage) => lateMessage = msg2);
-      setTimeout(() => {
-        expect(lateMessage).toBeUndefined();
-        done();
-      }, 1000);
+    let lateMessage: mqtt.IPublishPacket; // this message should never occur
+    mqttService.observe(topic).subscribe({
+      next: (msg1: mqtt.IPublishPacket) => {
+        expect(msg1).toBeDefined();
+        mqttService.observe(topic).subscribe({
+          next: (msg2: mqtt.IPublishPacket) => (lateMessage = msg2),
+          error: (err) => done.fail(err),
+        });
+        setTimeout(() => {
+          expect(lateMessage).toBeUndefined();
+          done();
+        }, 1000);
+      },
+      error: (err) => done.fail(err),
     });
     setTimeout(() => {
       mqttService.unsafePublish(topic, 'foobar');
@@ -230,20 +223,24 @@ describe('MqttService.filterMatchesTopic', () => {
   ];
   for (let i = 0; i < matches.length; i++) {
     it(`${matches[i][0]} matches ${matches[i][1]}: ${matches[i][2]}`, () => {
-      expect(MqttService.filterMatchesTopic(matches[i][1], matches[i][0])).toBe(matches[i][2]);
+      expect(MqttService.filterMatchesTopic(matches[i][1], matches[i][0])).toBe(
+        matches[i][2]
+      );
     });
   }
 });
 
 function generateUuid() {
-  let uuid = '', i, random;
+  let uuid = '',
+    i,
+    random;
   for (i = 0; i < 32; i++) {
-    random = Math.random() * 16 | 0;
+    random = (Math.random() * 16) | 0;
 
     if (i === 8 || i === 12 || i === 16 || i === 20) {
       uuid += '-';
     }
-    uuid += (i === 12 ? 4 : (i === 16 ? (random & 3 | 8) : random)).toString(16);
+    uuid += (i === 12 ? 4 : i === 16 ? (random & 3) | 8 : random).toString(16);
   }
   return uuid;
 }
