@@ -68,9 +68,6 @@
               "projects/example/src/favicon.ico",
               "projects/example/src/assets"
             ],
-            "styles": [
-              "projects/example/src/styles.css"
-            ],
             "scripts": []
           },
           "configurations": {
@@ -126,9 +123,6 @@
             "assets": [
               "projects/example/src/favicon.ico",
               "projects/example/src/assets"
-            ],
-            "styles": [
-              "projects/example/src/styles.css"
             ],
             "scripts": []
           }

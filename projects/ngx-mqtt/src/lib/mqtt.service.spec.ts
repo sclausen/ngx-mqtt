@@ -175,6 +175,7 @@ describe('MqttService Retained Behavior', () => {
       done();
     }, 3000);
   });
+
   it('do not emit not retained message on late subscribe', (done) => {
     const topic = 'ngx-mqtt/tests/notRetained/' + currentUuid;
     let lateMessage: mqtt.IPublishPacket; // this message should never occur
