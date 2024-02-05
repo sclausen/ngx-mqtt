@@ -22,5 +22,3 @@ export interface IMqttServiceOptions extends IClientOptions {
   /** if the url is provided, hostname, port path and protocol are ignored */
   url?: string;
 }
-
-export interface IPublishOptions extends IClientPublishOptions {}
