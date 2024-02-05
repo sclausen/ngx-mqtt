@@ -26,6 +26,7 @@
   "scripts": {
     "ng": "ng",
     "build": "ng build ngx-mqtt",
+    "example": "ng serve example",
     "watch": "ng build ngx-mqtt --watch --configuration development",
     "publishx": "npm run build && npm publish dist/ngx-mqtt/",
     "test": "ng test ngx-mqtt",
