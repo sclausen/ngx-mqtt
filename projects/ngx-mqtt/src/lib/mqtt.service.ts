@@ -168,7 +168,7 @@ export class MqttService {
           delete this.observables[filterString];
         }
         subscriber.error(new Error(`invalid topic filter '${filterString}'`));
-        return;
+        return undefined;
       }
       this.observables[filterString] ??= observable;
       const entry = this.acquire(filterString, opts);
