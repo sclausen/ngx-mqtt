@@ -10,4 +10,5 @@ If you have any issues using this library, please visit it's [homepage](https://
 ## **ngx-mqtt >= 7 is only compatible with angular >= 9**
 
 ## Local development
+
 For local development all peer dependency automatically installed during install.
