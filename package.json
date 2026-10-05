@@ -14,7 +14,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "ng test ngx-mqtt --watch=false",
-    "test:integration": "ng run ngx-mqtt:test-integration"
+    "test:integration": "ng run ngx-mqtt:test-integration",
+    "check:package": "publint dist/ngx-mqtt && attw --pack dist/ngx-mqtt --profile esm-only"
   },
   "dependencies": {
     "@angular/common": "^22.2.0",
@@ -29,6 +30,7 @@
     "@angular/build": "^22.2.1",
     "@angular/cli": "^22.2.1",
     "@angular/compiler-cli": "^22.2.0",
+    "@arethetypeswrong/cli": "^0.18.5",
     "@eslint/js": "^10.0.1",
     "@vitest/browser-playwright": "^4.1.11",
     "angular-eslint": "22.5.0",
@@ -37,6 +39,7 @@
     "ng-packagr": "^22.2.0",
     "playwright": "^1.63.0",
     "prettier": "^3.9.9",
+    "publint": "^0.3.25",
     "typescript": "~6.0.2",
     "typescript-eslint": "8.69.0",
     "vitest": "^4.1.11"
