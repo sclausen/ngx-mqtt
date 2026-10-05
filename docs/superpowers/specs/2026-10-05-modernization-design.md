@@ -101,20 +101,20 @@ export class MqttService {
   disconnect(force?: boolean): void;
   observe(filter: string, opts?: IClientSubscribeOptions): Observable<IMqttMessage>;
   observeRetained(filter: string, opts?: IClientSubscribeOptions): Observable<IMqttMessage>;
-  publish(topic: string, message: string | Uint8Array, opts?: IClientPublishOptions): Observable<void>;
-  unsafePublish(topic: string, message: string | Uint8Array, opts?: IClientPublishOptions): void;
+  publish(topic: string, message: MqttPayload, opts?: IClientPublishOptions): Observable<void>;
+  unsafePublish(topic: string, message: MqttPayload, opts?: IClientPublishOptions): void;
 
   static filterMatchesTopic(filter: string, topic: string): boolean;
 }
 
 export function filterMatchesTopic(filter: string, topic: string): boolean;
 export enum MqttConnectionState { CLOSED, CONNECTING, CONNECTED }
-export type { MqttLogLevel, MqttLogEntry, MqttLogger };
+export type { MqttLogLevel, MqttLogEntry, MqttLogger, MqttPayload };
 export const MqttServiceConfig: InjectionToken<MqttServiceOptions>;
 export const MqttClientService: InjectionToken<MqttClient | undefined>;
 ```
 
-- `MqttServiceOptions` extends MQTT.js v5 `IClientOptions` with `connectOnCreate`, `hostname`, `port`, `path`, `protocol` (`'ws' | 'wss'`), `url`, `logLevel`, `logger` (see Logging). The ngx-mqtt specific fields `connectOnCreate`, `logLevel` and `logger` are stripped before options are passed to `mqtt.connect`. `IMqttServiceOptions` remains as a deprecated type alias.
+- `MqttServiceOptions` extends MQTT.js v5 `IClientOptions` with `connectOnCreate`, `hostname`, `port`, `path`, `protocol` (`'ws' | 'wss'`), `url`, `logLevel`, `logger` (see Logging). The fields `connectOnCreate`, `logLevel`, `logger`, `url`, `hostname`, `port`, `path` and `protocol` are stripped before options are passed to `mqtt.connect`; the broker address is passed only as the resolved URL, so `url` reliably wins as documented. `IMqttServiceOptions` remains as a deprecated type alias.
 - `IMqttMessage` is based on MQTT.js v5 `IPublishPacket`. The other `I*` types are kept as aliases or re-declared on top of `mqtt` v5 types so existing imports compile.
 - `Packet` is imported from `mqtt` (re-exported from mqtt-packet by MQTT.js), so `mqtt-packet` is no longer a direct dependency.
 - `MqttService` stays `providedIn: 'root'` and reads its configuration via `inject(MqttServiceConfig)` and `inject(MqttClientService, { optional: true })`. Using the service without `provideMqtt` or `forRoot` throws a clear error naming `provideMqtt`.
@@ -127,7 +127,10 @@ export const MqttClientService: InjectionToken<MqttClient | undefined>;
 - `observe` uses `share()`. `observeRetained` uses `shareReplay({ bufferSize: 1, refCount: true })`. The `using()` resource factory performs the broker subscribe on first subscriber and unsubscribe on the last teardown, as today.
 - `publish` uses `new Observable(...)` instead of `Observable.create`. The broker publish happens on subscription, as today.
 - `inject(DestroyRef).onDestroy(...)` ends the client with `force = true` when the root injector is destroyed.
-- Client ID generation uses `crypto.randomUUID()` (prefixed `ngx-mqtt-`) unless a `clientId` is configured.
+- Client ID generation uses `crypto.randomUUID()` (prefixed `ngx-mqtt-`) unless a `clientId` is configured. `randomUUID` only exists in secure contexts, so a `Math.random` based fallback is used when it is unavailable.
+- `MqttPayload` is `Parameters<MqttClient['publish']>[1]` (`string | Buffer`, as in 17.x), derived from MQTT.js so no Node types are referenced directly.
+- A rejected subscription errors the observable with an `Error` instead of a string.
+- Handlers are bound per client instance; events from a replaced client (after `connect()` is called again) are ignored, so the old client's `close` cannot overwrite the new client's state.
 - No dependency on zone.js. The library works in zoneless applications.
 
 ### Behavior fixes
@@ -193,7 +196,7 @@ Never logged: message payloads, `username`, `password`, and the userinfo part of
 
 Hosts without the container run `docker compose up mosquitto` and use their own Node 22.
 
-The broker host for integration tests is read from `MQTT_HOST` (default `localhost`). The Dev Container sets `MQTT_HOST=mosquitto`.
+The `dev` service uses `network_mode: service:mosquitto`, so the broker is reachable at `localhost:9001` inside the Dev Container, on the host, and in CI alike. No broker host configuration is needed.
 
 ### Unit tests (`npm test`)
 
@@ -216,7 +219,7 @@ Covered:
 
 ### Integration tests (`npm run test:integration`)
 
-Separate Vitest configuration in browser mode (Playwright provider, Chromium), connecting to `ws://${MQTT_HOST}:9001`. Each run uses a unique topic prefix. Covered: connect, subscribe and receive, wildcard filters, retained messages, publish, resubscribe after a forced reconnect (no duplicate deliveries), clean disconnect.
+Separate Vitest configuration in browser mode (Playwright provider, Chromium), connecting to `ws://localhost:9001`. Each run uses a unique topic prefix. Covered: connect, subscribe and receive, wildcard filters, retained messages, publish, resubscribe after a forced reconnect (no duplicate deliveries), clean disconnect.
 
 ### CI (`.github/workflows/ci.yml`)
 
@@ -227,7 +230,7 @@ Jobs:
 - `lint`: eslint and prettier check.
 - `unit`: matrix over Angular 21 and 22 (installs the matrix version of `@angular/*` before running).
 - `build`: `ng build ngx-mqtt`, `npm pack` of `dist/ngx-mqtt`, checked with `publint` and `@arethetypeswrong/cli`. Uploads the tarball as an artifact.
-- `integration`: needs `build`; Mosquitto service container with the repo config; installs Playwright Chromium; runs `test:integration`.
+- `integration`: needs `build`; starts the broker with `docker compose up -d --wait mosquitto` after checkout (GitHub service containers cannot mount repo files), installs Playwright Chromium; runs `test:integration`.
 
 ### Release (`.github/workflows/release.yml`)
 
@@ -264,6 +267,10 @@ The root README is copied into the package at build time. The link to the old gh
 - resubscription now handled by MQTT.js
 - logging is now configurable: errors are still logged to the console by default (`logLevel: 'error'`); use `logLevel: 'silent'` to turn it off, a lower level for more output, or `logger` to route entries elsewhere
 - injected options no longer mutated
+- `MQTT_SERVICE_OPTIONS` constant removed
+- generated client IDs are prefixed `ngx-mqtt-` instead of `client-`
+- a rejected subscription errors with an `Error` instead of a string
+- `IOnConnectEvent` is the CONNACK packet type from MQTT.js
 - peer range Angular 21 to 23, Node 22 for development
 - Buffer and `url` polyfills no longer required
 
