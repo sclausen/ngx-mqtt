@@ -20,6 +20,7 @@ import {
   Subject,
 } from 'rxjs';
 import type { MqttInternalEvent } from './mqtt.internal';
+import { startLogging } from './mqtt.logger';
 import {
   type IMqttMessage,
   type IOnConnectEvent,
@@ -101,7 +102,11 @@ export class MqttService {
     const client = inject(MqttClientService, { optional: true }) ?? undefined;
     this.options = options;
     this._clientId = options.clientId ?? generateClientId();
-    inject(DestroyRef).onDestroy(() => this.client?.end(true));
+    const logging = startLogging(this, this.internalEvents, options, () => this._clientId);
+    inject(DestroyRef).onDestroy(() => {
+      logging.unsubscribe();
+      this.client?.end(true);
+    });
     if (options.connectOnCreate !== false) {
       this.connect({}, client);
     }
