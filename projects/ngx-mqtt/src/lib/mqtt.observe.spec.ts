@@ -146,6 +146,54 @@ describe('MqttService.observe', () => {
     expect(received).toEqual(['after']);
   });
 
+  it('keeps a held observable subscribed when another subscriber of the filter leaves', () => {
+    const { service, fake } = setup();
+    const held = service.observe('t');
+    const s1 = held.subscribe();
+    s1.unsubscribe();
+    const received: string[] = [];
+    const s2 = held.subscribe((m) => received.push(text(m)));
+    const other = service.observe('t').subscribe();
+    other.unsubscribe();
+    expect(fake.unsubscribeCalls).toEqual(['t']);
+    fake.deliver('t', 'still');
+    expect(received).toEqual(['still']);
+    const replacement = new FakeMqttClient();
+    service.connect({}, replacement.asClient());
+    expect(replacement.subscribeCalls).toEqual([{ filter: 't', opts: { qos: 1 } }]);
+    replacement.deliver('t', 'after');
+    expect(received).toEqual(['still', 'after']);
+    s2.unsubscribe();
+    expect(replacement.unsubscribeCalls).toEqual(['t']);
+  });
+
+  it('ref-counts broker subscriptions across observable instances of one filter', () => {
+    const { service, fake } = setup();
+    const held = service.observe('t');
+    held.subscribe().unsubscribe();
+    const other = service.observe('t');
+    expect(other).not.toBe(held);
+    const o = other.subscribe();
+    const s = held.subscribe();
+    expect(fake.subscribeCalls.length).toBe(2);
+    o.unsubscribe();
+    expect(fake.unsubscribeCalls).toEqual(['t']);
+    const replacement = new FakeMqttClient();
+    service.connect({}, replacement.asClient());
+    expect(replacement.subscribeCalls).toEqual([{ filter: 't', opts: { qos: 1 } }]);
+    s.unsubscribe();
+    expect(replacement.unsubscribeCalls).toEqual(['t']);
+  });
+
+  it('ignores a SUBACK that arrives after the subscription was torn down', async () => {
+    const { service } = setup();
+    const events: IOnSubackEvent[] = [];
+    service.onSuback.subscribe((event) => events.push(event));
+    service.observe('a').subscribe().unsubscribe();
+    await flush();
+    expect(events).toEqual([]);
+  });
+
   it('unsubscribes from the current client after replacement', () => {
     const { service } = setup();
     const subscription = service.observe('a').subscribe();

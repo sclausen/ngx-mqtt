@@ -50,6 +50,7 @@ interface ErrorWithPacket extends Error {
 interface ActiveSubscription {
   opts: IClientSubscribeOptions;
   rejected: Subject<never>;
+  count: number;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -161,25 +162,44 @@ export class MqttService {
       return existing;
     }
     const observable: Observable<IMqttMessage> = new Observable<IMqttMessage>((subscriber) => {
-      const entry: ActiveSubscription = { opts, rejected: new Subject<never>() };
-      this.active.set(filterString, entry);
-      this.internalEvents.next({ type: 'subscribe', filter: filterString });
-      this.brokerSubscribe(filterString, entry);
+      this.observables[filterString] ??= observable;
+      const entry = this.acquire(filterString, opts);
       const inner = merge(entry.rejected, this._messages)
         .pipe(filter((message) => filterMatchesTopic(filterString, message.topic)))
         .subscribe(subscriber);
       return () => {
         inner.unsubscribe();
-        this.active.delete(filterString);
         if (this.observables[filterString] === observable) {
           delete this.observables[filterString];
         }
-        this.internalEvents.next({ type: 'unsubscribe', filter: filterString });
-        this.client?.unsubscribe(filterString);
+        this.release(filterString, entry);
       };
     }).pipe(sharing);
     this.observables[filterString] = observable;
     return observable;
+  }
+
+  private acquire(filterString: string, opts: IClientSubscribeOptions): ActiveSubscription {
+    const existing = this.active.get(filterString);
+    if (existing) {
+      existing.count++;
+      return existing;
+    }
+    const entry: ActiveSubscription = { opts, rejected: new Subject<never>(), count: 1 };
+    this.active.set(filterString, entry);
+    this.internalEvents.next({ type: 'subscribe', filter: filterString });
+    this.brokerSubscribe(filterString, entry);
+    return entry;
+  }
+
+  private release(filterString: string, entry: ActiveSubscription): void {
+    entry.count--;
+    if (entry.count > 0) {
+      return;
+    }
+    this.active.delete(filterString);
+    this.internalEvents.next({ type: 'unsubscribe', filter: filterString });
+    this.client?.unsubscribe(filterString);
   }
 
   private brokerSubscribe(filterString: string, entry: ActiveSubscription): void {
@@ -187,6 +207,9 @@ export class MqttService {
       filterString,
       entry.opts,
       (error: Error | null, granted?: ISubscriptionGrant[], packet?: SubackPacketLike) => {
+        if (this.active.get(filterString) !== entry) {
+          return;
+        }
         const reasonCodes = (packet ?? (error as ErrorWithPacket | null)?.packet)?.granted;
         const rejected = Array.isArray(reasonCodes)
           ? reasonCodes.some((code) => (code & 0x80) !== 0)
