@@ -2,8 +2,8 @@ services:
   mosquitto:
     image: eclipse-mosquitto:2
     ports:
-      - '1883:1883'
-      - '9001:9001'
+      - '127.0.0.1:1883:1883'
+      - '127.0.0.1:9001:9001'
     volumes:
       - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
     healthcheck:
@@ -17,7 +17,11 @@ services:
     network_mode: service:mosquitto
     volumes:
       - .:/workspaces/ngx-mqtt:cached
+      - node_modules:/workspaces/ngx-mqtt/node_modules
     command: sleep infinity
     depends_on:
       mosquitto:
         condition: service_healthy
+
+volumes:
+  node_modules: {}

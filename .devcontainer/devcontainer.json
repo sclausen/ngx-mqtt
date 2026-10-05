@@ -6,7 +6,7 @@
   "workspaceFolder": "/workspaces/ngx-mqtt",
   "shutdownAction": "stopCompose",
   "forwardPorts": [4200, 9001],
-  "postCreateCommand": "npm ci && npx playwright install --with-deps chromium",
+  "postCreateCommand": "sudo chown node:node /workspaces/ngx-mqtt/node_modules && npm ci && npx playwright install --with-deps chromium",
   "customizations": {
     "vscode": {
       "extensions": [
