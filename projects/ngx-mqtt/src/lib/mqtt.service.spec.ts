@@ -91,6 +91,19 @@ describe('MqttService connection', () => {
     expect(service.connectionState()).toBe(MqttConnectionState.CONNECTED);
   });
 
+  it('keeps state, clientId and the previous client when creating a client throws', async () => {
+    const { service, fake } = setup({ clientId: 'kept' });
+    fake.emit('connect', { cmd: 'connack' });
+    expect(() => service.connect({ url: 'localhost', clientId: 'other' })).toThrowError(
+      'Missing protocol',
+    );
+    expect(await current(service, (s) => s.state)).toBe(MqttConnectionState.CONNECTED);
+    expect(service.clientId).toBe('kept');
+    expect(fake.endCalls).toEqual([]);
+    fake.emit('close');
+    expect(service.connectionState()).toBe(MqttConnectionState.CLOSED);
+  });
+
   it('disconnects with force true by default', () => {
     const { service, fake } = setup();
     service.disconnect();

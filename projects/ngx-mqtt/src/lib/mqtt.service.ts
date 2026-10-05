@@ -122,10 +122,11 @@ export class MqttService {
       this.options,
       opts,
     );
+    const next = client ?? mqtt.connect(resolveUrl(merged), toClientOptions(merged));
     this._clientId = merged.clientId ?? this._clientId;
     const previous = this.client;
     this.setState(MqttConnectionState.CONNECTING);
-    this.client = client ?? mqtt.connect(resolveUrl(merged), toClientOptions(merged));
+    this.client = next;
     previous?.end(true);
     this.bind(this.client);
     this.active.forEach((subscription, filterString) =>
