@@ -120,6 +120,24 @@ describe('MqttService.observe', () => {
     expect(received).toEqual(['still']);
   });
 
+  it.each(['a/#/b', ''])('errors for the invalid filter %j without subscribing', async (bad) => {
+    const events: string[] = [];
+    const { service, fake } = setup({
+      logLevel: 'debug',
+      logger: (entry) => events.push(entry.event),
+    });
+    await expect(firstValueFrom(service.observe(bad))).rejects.toThrowError(
+      `invalid topic filter '${bad}'`,
+    );
+    await expect(firstValueFrom(service.observeRetained(bad))).rejects.toThrowError(
+      `invalid topic filter '${bad}'`,
+    );
+    expect(fake.subscribeCalls).toEqual([]);
+    expect(fake.unsubscribeCalls).toEqual([]);
+    expect(service.observables).toEqual({});
+    expect(events).toEqual([]);
+  });
+
   it('throws when not connected', () => {
     const { service } = setup({ connectOnCreate: false });
     expect(() => service.observe('a')).toThrowError('mqtt client not connected');

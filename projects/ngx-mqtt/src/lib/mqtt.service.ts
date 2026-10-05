@@ -33,7 +33,7 @@ import {
 } from './mqtt.model';
 import { generateClientId, mergeOptions, resolveUrl, toClientOptions } from './mqtt.options';
 import { MqttClientService, MqttServiceConfig } from './mqtt.tokens';
-import { filterMatchesTopic } from './topic-filter';
+import { filterMatchesTopic, isValidTopicFilter } from './topic-filter';
 
 export const MISSING_CONFIG_ERROR =
   'ngx-mqtt: no configuration found. Add provideMqtt(options) to your application providers.';
@@ -162,6 +162,13 @@ export class MqttService {
       return existing;
     }
     const observable: Observable<IMqttMessage> = new Observable<IMqttMessage>((subscriber) => {
+      if (!isValidTopicFilter(filterString)) {
+        if (this.observables[filterString] === observable) {
+          delete this.observables[filterString];
+        }
+        subscriber.error(new Error(`invalid topic filter '${filterString}'`));
+        return;
+      }
       this.observables[filterString] ??= observable;
       const entry = this.acquire(filterString, opts);
       const inner = merge(entry.rejected, this._messages)

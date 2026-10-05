@@ -18,3 +18,16 @@ export function filterMatchesTopic(filterString: string, topic: string): boolean
   };
   return match();
 }
+
+export function isValidTopicFilter(filter: string): boolean {
+  if (filter === '' || filter.includes('\u0000')) {
+    return false;
+  }
+  const levels = filter.split('/');
+  return levels.every((level, index) => {
+    if (level.includes('#')) {
+      return level === '#' && index === levels.length - 1;
+    }
+    return !level.includes('+') || level === '+';
+  });
+}
