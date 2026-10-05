@@ -37,7 +37,7 @@ export const consoleLogger: MqttLogger = (entry) =>
   console[entry.level]('[ngx-mqtt]', entry.message, entry);
 
 export function redact(text: string): string {
-  return text.replace(/([a-z][a-z0-9+.-]*:\/\/)[^/\s@]*@/gi, '$1');
+  return text.replace(/([a-z][a-z0-9+.-]*:\/\/)[^\s/?#]*@/gi, '$1');
 }
 
 function packetContext(packet: Packet): MqttLogEntry['context'] {

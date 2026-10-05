@@ -140,6 +140,16 @@ describe('startLogging', () => {
     expect(entries[0].message).toBe('connection to wss://broker.example/mqtt failed');
   });
 
+  it('redacts URL userinfo in publish failures', () => {
+    const { internal, entries } = start({ logLevel: 'warn' });
+    internal.next({
+      type: 'publishError',
+      topic: 't',
+      error: new Error('socket wss://u:p@ss@host/mqtt closed'),
+    });
+    expect(entries[0].message).toBe("publish to 't' failed: socket wss://host/mqtt closed");
+  });
+
   it('adds the reason code of MQTT errors', () => {
     const { source, entries } = start();
     source.onError.next(Object.assign(new Error('Not authorized'), { code: 135 }));
@@ -150,6 +160,19 @@ describe('startLogging', () => {
 describe('redact', () => {
   it('leaves URLs without userinfo untouched', () => {
     expect(redact('ws://localhost:9001')).toBe('ws://localhost:9001');
+    expect(redact('see wss://broker.example/a@b for details')).toBe(
+      'see wss://broker.example/a@b for details',
+    );
+  });
+
+  it('fully redacts a password containing @', () => {
+    expect(redact('wss://u:p@ss@host/mqtt')).toBe('wss://host/mqtt');
+  });
+
+  it('redacts every URL in a message', () => {
+    expect(redact('ws://a:b@one:9001 and wss://c:d@e@two/mqtt')).toBe(
+      'ws://one:9001 and wss://two/mqtt',
+    );
   });
 });
 
