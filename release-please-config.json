@@ -4,6 +4,7 @@
   "packages": {
     ".": {
       "release-type": "node",
+      "release-as": "22.0.0",
       "package-name": "ngx-mqtt",
       "changelog-path": "CHANGELOG.md",
       "include-component-in-tag": false,
