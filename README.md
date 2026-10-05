@@ -160,7 +160,7 @@ npm run test:integration  # browser tests against Mosquitto
 npm start                 # demo app on http://localhost:4200
 ```
 
-Commits follow [Conventional Commits](https://www.conventionalcommits.org); releases are created automatically.
+Commits follow [Conventional Commits](https://www.conventionalcommits.org). Releases are prepared automatically and staged on npm; a maintainer approves each one with `npm stage approve` before it goes live.
 
 ## License
 

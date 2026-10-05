@@ -31,7 +31,20 @@ jobs:
           node-version-file: .nvmrc
           registry-url: https://registry.npmjs.org
           cache: npm
+      - run: npm install -g npm@^11.16.0
       - run: npm ci
       - run: npm test
       - run: npm run build
-      - run: npm publish ./dist/ngx-mqtt --provenance --access public
+      - run: npm stage publish --provenance --access public
+        working-directory: dist/ngx-mqtt
+      - run: |
+          {
+            echo "## ngx-mqtt staged on npm"
+            echo
+            echo "The release is staged and not public yet. Approve it with 2FA:"
+            echo
+            echo '```'
+            echo 'npm stage list ngx-mqtt'
+            echo 'npm stage approve <stage-id>'
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
