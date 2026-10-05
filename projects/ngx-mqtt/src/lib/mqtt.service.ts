@@ -2,12 +2,23 @@ import { DestroyRef, Injectable, type Signal, inject, signal } from '@angular/co
 import {
   connect as mqttConnect,
   type IClientPublishOptions,
+  type IClientSubscribeOptions,
   type IConnackPacket,
   type IPublishPacket,
+  type ISubscriptionGrant,
   type MqttClient,
   type Packet,
 } from 'mqtt';
-import { BehaviorSubject, Observable, Subject } from 'rxjs';
+import {
+  BehaviorSubject,
+  filter,
+  merge,
+  type MonoTypeOperatorFunction,
+  Observable,
+  share,
+  shareReplay,
+  Subject,
+} from 'rxjs';
 import type { MqttInternalEvent } from './mqtt.internal';
 import {
   type IMqttMessage,
@@ -28,6 +39,11 @@ export const MISSING_CONFIG_ERROR =
   'ngx-mqtt: no configuration found. Add provideMqtt(options) to your application providers.';
 const NOT_CONNECTED_ERROR = 'mqtt client not connected';
 
+interface ActiveSubscription {
+  opts: IClientSubscribeOptions;
+  rejected: Subject<never>;
+}
+
 @Injectable({ providedIn: 'root' })
 export class MqttService {
   static readonly filterMatchesTopic = filterMatchesTopic;
@@ -35,6 +51,7 @@ export class MqttService {
   private readonly options: MqttServiceOptions;
   private client: MqttClient | undefined;
   private _clientId: string;
+  private readonly active = new Map<string, ActiveSubscription>();
   private readonly internalEvents = new Subject<MqttInternalEvent>();
 
   private readonly _state = new BehaviorSubject(MqttConnectionState.CLOSED);
@@ -98,10 +115,75 @@ export class MqttService {
     this.client = client ?? mqttConnect(resolveUrl(merged), toClientOptions(merged));
     previous?.end(true);
     this.bind(this.client);
+    this.active.forEach((subscription, filterString) =>
+      this.brokerSubscribe(filterString, subscription),
+    );
   }
 
   disconnect(force = true): void {
     this.requireClient().end(force);
+  }
+
+  observe(
+    filterString: string,
+    opts: IClientSubscribeOptions = { qos: 1 },
+  ): Observable<IMqttMessage> {
+    return this.generalObserve(filterString, share(), opts);
+  }
+
+  observeRetained(
+    filterString: string,
+    opts: IClientSubscribeOptions = { qos: 1 },
+  ): Observable<IMqttMessage> {
+    return this.generalObserve(filterString, shareReplay({ bufferSize: 1, refCount: true }), opts);
+  }
+
+  private generalObserve(
+    filterString: string,
+    sharing: MonoTypeOperatorFunction<IMqttMessage>,
+    opts: IClientSubscribeOptions,
+  ): Observable<IMqttMessage> {
+    this.requireClient();
+    const existing = this.observables[filterString];
+    if (existing) {
+      return existing;
+    }
+    const observable: Observable<IMqttMessage> = new Observable<IMqttMessage>((subscriber) => {
+      const entry: ActiveSubscription = { opts, rejected: new Subject<never>() };
+      this.active.set(filterString, entry);
+      this.internalEvents.next({ type: 'subscribe', filter: filterString });
+      this.brokerSubscribe(filterString, entry);
+      const inner = merge(entry.rejected, this._messages)
+        .pipe(filter((message) => filterMatchesTopic(filterString, message.topic)))
+        .subscribe(subscriber);
+      return () => {
+        inner.unsubscribe();
+        this.active.delete(filterString);
+        if (this.observables[filterString] === observable) {
+          delete this.observables[filterString];
+        }
+        this.internalEvents.next({ type: 'unsubscribe', filter: filterString });
+        this.client?.unsubscribe(filterString);
+      };
+    }).pipe(sharing);
+    this.observables[filterString] = observable;
+    return observable;
+  }
+
+  private brokerSubscribe(filterString: string, entry: ActiveSubscription): void {
+    this.client?.subscribe(
+      filterString,
+      entry.opts,
+      (_error: Error | null, granted?: ISubscriptionGrant[]) => {
+        granted?.forEach((grant) => {
+          const accepted = grant.qos !== 128;
+          this._onSuback.next({ filter: filterString, granted: accepted });
+          if (!accepted) {
+            entry.rejected.error(new Error(`subscription for '${grant.topic}' rejected!`));
+          }
+        });
+      },
+    );
   }
 
   publish(
