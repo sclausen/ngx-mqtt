@@ -29,6 +29,9 @@
     },
     {
       "path": "./projects/ngx-mqtt/tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/demo/tsconfig.app.json"
     }
   ]
 }

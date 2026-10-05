@@ -8,6 +8,7 @@
   },
   "scripts": {
     "ng": "ng",
+    "start": "ng serve demo",
     "build": "ng build ngx-mqtt && cp README.md LICENSE dist/ngx-mqtt/",
     "lint": "ng lint",
     "format": "prettier --write .",
