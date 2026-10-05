@@ -59,7 +59,7 @@ Removed: `.travis.yml`, `mosquitto.sh`, `webpack.config.js`, `.vscode/tasks.json
 
 Tooling:
 
-- Package manager: npm, pinned through `packageManager` and `engines` (Node 22 LTS) in the root `package.json`.
+- Package manager: npm, pinned through `packageManager` and `engines` (Node 24 LTS, which ships npm 11 as required by npm trusted publishing) in the root `package.json`.
 - Lint: angular-eslint with flat config. Format: Prettier.
 - Library build: ng-packagr via `@angular/build:ng-packagr`, producing APF output (FESM2022, `exports` map, typings, `sideEffects: false`).
 - Root scripts: `build`, `lint`, `format`, `test`, `test:integration`, `start` (serves demo).
@@ -189,12 +189,12 @@ Never logged: message payloads, `username`, `password`, and the userinfo part of
 
 `compose.yaml`:
 
-- `dev`: `mcr.microsoft.com/devcontainers/typescript-node:22`, workspace mounted, `sleep infinity`.
+- `dev`: `mcr.microsoft.com/devcontainers/typescript-node:24`, workspace mounted, `sleep infinity`.
 - `mosquitto`: `eclipse-mosquitto:2`, ports 9001 (websockets) and 1883 (tcp), config from `mosquitto/mosquitto.conf`, healthcheck via `mosquitto_sub` on `$SYS/#`.
 
 `.devcontainer/devcontainer.json` uses the `dev` service, runs `npm ci` as `postCreateCommand`, forwards 4200 and 9001, and installs the ESLint, Prettier and Angular Language Service extensions.
 
-Hosts without the container run `docker compose up mosquitto` and use their own Node 22.
+Hosts without the container run `docker compose up mosquitto` and use their own Node 24.
 
 The `dev` service uses `network_mode: service:mosquitto`, so the broker is reachable at `localhost:9001` inside the Dev Container, on the host, and in CI alike. No broker host configuration is needed.
 
@@ -271,7 +271,7 @@ The root README is copied into the package at build time. The link to the old gh
 - generated client IDs are prefixed `ngx-mqtt-` instead of `client-`
 - a rejected subscription errors with an `Error` instead of a string
 - `IOnConnectEvent` is the CONNACK packet type from MQTT.js
-- peer range Angular 21 to 23, Node 22 for development
+- peer range Angular 21 to 23, Node 24 for development
 - Buffer and `url` polyfills no longer required
 
 The CHANGELOG entry for 22.0.0 links to MIGRATION.md.
