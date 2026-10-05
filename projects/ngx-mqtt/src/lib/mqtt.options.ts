@@ -56,7 +56,9 @@ export function mergeOptions(...sources: (MqttServiceOptions | undefined)[]): Mq
   ) as MqttServiceOptions;
 }
 
-export function generateClientId(source: { randomUUID?: () => string } | undefined = {}): string {
+export function generateClientId(
+  source: { randomUUID?: () => string } | undefined = globalThis.crypto,
+): string {
   const id =
     source?.randomUUID?.() ??
     `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 12)}`;

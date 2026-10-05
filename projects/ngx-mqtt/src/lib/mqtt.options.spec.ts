@@ -85,9 +85,14 @@ describe('generateClientId', () => {
 
   it('falls back when randomUUID is unavailable', () => {
     const first = generateClientId({});
-    const second = generateClientId(undefined);
+    const second = generateClientId({ randomUUID: undefined });
     expect(first).toMatch(/^ngx-mqtt-[a-z0-9]{8,}$/);
     expect(second).toMatch(/^ngx-mqtt-[a-z0-9]{8,}$/);
     expect(first).not.toBe(second);
+  });
+
+  it('uses crypto.randomUUID by default', () => {
+    const id = generateClientId();
+    expect(id).toMatch(/^ngx-mqtt-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
   });
 });
