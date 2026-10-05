@@ -1,5 +1,5 @@
 export function filterMatchesTopic(filterString: string, topic: string): boolean {
-  if (filterString[0] === '#' && topic[0] === '$') {
+  if ((filterString[0] === '#' || filterString[0] === '+') && topic[0] === '$') {
     return false;
   }
   const filterLevels = (filterString || '').split('/').reverse();
@@ -11,7 +11,7 @@ export function filterMatchesTopic(filterString: string, topic: string): boolean
       case '#':
         return true;
       case '+':
-        return t ? match() : false;
+        return t !== undefined ? match() : false;
       default:
         return f === t && (f === undefined ? true : match());
     }

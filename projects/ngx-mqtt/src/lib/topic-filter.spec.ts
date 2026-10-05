@@ -20,7 +20,13 @@ describe('filterMatchesTopic', () => {
     ['a/b', 'a/b/#', true],
     ['a/b/c', 'a/b/c', true],
     ['$SYS/broker/uptime', '$SYS/#', true],
-    ['a//c', 'a/+/c', false],
+    ['a//c', 'a/+/c', true],
+    ['sport/', 'sport/+', true],
+    ['sport', 'sport/+', false],
+    ['/finance', '+/+', true],
+    ['/finance', '/+', true],
+    ['/finance', '+', false],
+    ['$SYS/monitor', '+/monitor', false],
   ];
 
   it.each(cases)('topic %s against filter %s is %s', (topic, filter, expected) => {
