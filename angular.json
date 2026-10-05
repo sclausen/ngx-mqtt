@@ -28,7 +28,17 @@
         "test": {
           "builder": "@angular/build:unit-test",
           "options": {
-            "tsConfig": "projects/ngx-mqtt/tsconfig.spec.json"
+            "tsConfig": "projects/ngx-mqtt/tsconfig.spec.json",
+            "exclude": ["**/*.integration.spec.ts"]
+          }
+        },
+        "test-integration": {
+          "builder": "@angular/build:unit-test",
+          "options": {
+            "tsConfig": "projects/ngx-mqtt/tsconfig.spec.json",
+            "include": ["**/*.integration.spec.ts"],
+            "browsers": ["ChromiumHeadless"],
+            "watch": false
           }
         },
         "lint": {

@@ -1,6 +1,5 @@
 import { DestroyRef, Injectable, type Signal, inject, signal } from '@angular/core';
-import {
-  connect as mqttConnect,
+import mqtt, {
   type IClientPublishOptions,
   type IClientSubscribeOptions,
   type IConnackPacket,
@@ -125,7 +124,7 @@ export class MqttService {
     this._clientId = merged.clientId ?? this._clientId;
     const previous = this.client;
     this.setState(MqttConnectionState.CONNECTING);
-    this.client = client ?? mqttConnect(resolveUrl(merged), toClientOptions(merged));
+    this.client = client ?? mqtt.connect(resolveUrl(merged), toClientOptions(merged));
     previous?.end(true);
     this.bind(this.client);
     this.active.forEach((subscription, filterString) =>
