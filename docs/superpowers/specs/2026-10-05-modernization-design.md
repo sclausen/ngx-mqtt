@@ -109,11 +109,12 @@ export class MqttService {
 
 export function filterMatchesTopic(filter: string, topic: string): boolean;
 export enum MqttConnectionState { CLOSED, CONNECTING, CONNECTED }
+export type { MqttLogLevel, MqttLogEntry, MqttLogger };
 export const MqttServiceConfig: InjectionToken<MqttServiceOptions>;
 export const MqttClientService: InjectionToken<MqttClient | undefined>;
 ```
 
-- `MqttServiceOptions` extends MQTT.js v5 `IClientOptions` with `connectOnCreate`, `hostname`, `port`, `path`, `protocol` (`'ws' | 'wss'`), `url`. `IMqttServiceOptions` remains as a deprecated type alias.
+- `MqttServiceOptions` extends MQTT.js v5 `IClientOptions` with `connectOnCreate`, `hostname`, `port`, `path`, `protocol` (`'ws' | 'wss'`), `url`, `logLevel`, `logger` (see Logging). The ngx-mqtt specific fields `connectOnCreate`, `logLevel` and `logger` are stripped before options are passed to `mqtt.connect`. `IMqttServiceOptions` remains as a deprecated type alias.
 - `IMqttMessage` is based on MQTT.js v5 `IPublishPacket`. The other `I*` types are kept as aliases or re-declared on top of `mqtt` v5 types so existing imports compile.
 - `Packet` is imported from `mqtt` (re-exported from mqtt-packet by MQTT.js), so `mqtt-packet` is no longer a direct dependency.
 - `MqttService` stays `providedIn: 'root'` and reads its configuration via `inject(MqttServiceConfig)` and `inject(MqttClientService, { optional: true })`. Using the service without `provideMqtt` or `forRoot` throws a clear error naming `provideMqtt`.
@@ -133,8 +134,51 @@ export const MqttClientService: InjectionToken<MqttClient | undefined>;
 
 1. Remove the manual resubscription in the `connect` and `reconnect` handlers. MQTT.js v5 resubscribes on reconnect itself (`resubscribe: true` by default), and the old code duplicated subscriptions and only ran when `connectOnCreate === true`.
 2. Do not mutate the injected options. Merging happens into a fresh object.
-3. Remove `console.error` from the error handler. Errors are delivered through `onError` only.
+3. Remove `console.error` from the error handler. The service itself never logs. Console output is produced by the separate, configurable `MqttLogger` described in Logging.
 4. Replace `(client as any).stream.on('error', ...)` with a typed, guarded attachment that only registers when `client.stream` exists.
+
+### Logging
+
+Logging is a pure consumer of the public event streams. An internal `MqttLogger` (`mqtt-logger.ts`, not exported) is created by the service, subscribes to the service's observables, maps events to log entries, filters by level and hands them to a sink. Its subscriptions are torn down with the service via `DestroyRef`.
+
+Configuration on `MqttServiceOptions`:
+
+```ts
+export type MqttLogLevel = 'debug' | 'info' | 'warn' | 'error' | 'silent';
+
+export interface MqttLogEntry {
+  level: Exclude<MqttLogLevel, 'silent'>;
+  message: string;
+  event: string;
+  clientId: string;
+  timestamp: string;
+  context?: { filter?: string; topic?: string; cmd?: string; reasonCode?: number };
+}
+
+export type MqttLogger = (entry: MqttLogEntry) => void;
+
+logLevel?: MqttLogLevel;  // default 'error'
+logger?: MqttLogger;      // default console sink
+```
+
+- Level ordering: `debug < info < warn < error < silent`. An entry is emitted when its level is at or above `logLevel`.
+- `silent`: the logger creates no subscriptions at all.
+- Default sink: `console.debug` / `console.info` / `console.warn` / `console.error` with an `[ngx-mqtt]` prefix, the message, and the entry object.
+- Custom `logger` replaces the default sink and receives the structured entry, for forwarding to an application logger or an error tracker.
+- The default `'error'` preserves the 17.x behavior of errors appearing in the console.
+
+Event to level mapping:
+
+| Level | Events |
+| --- | --- |
+| error | `onError` |
+| warn | `onOffline`, rejected SUBACK (qos 128), `publish` failure |
+| info | connect, reconnect, close, end |
+| debug | broker subscribe and unsubscribe (first subscriber and last teardown per filter), `onPacketsend` and `onPacketreceive` (`cmd` and topic only) |
+
+To make subscribe/unsubscribe and publish failures observable for the logger, the service gets an internal (non-public) event stream for these; it is not part of the public API.
+
+Never logged: message payloads, `username`, `password`, and the userinfo part of the URL. Entry context is limited to `clientId`, filter, topic, packet `cmd` and reason code.
 
 ## 3. Dev environment, tests, CI and release
 
@@ -168,6 +212,7 @@ Covered:
 - client is ended when the injector is destroyed
 - `provideMqtt` and `MqttModule.forRoot` yield equivalent providers
 - missing configuration throws the documented error
+- logging: level filtering, default level `'error'`, `'silent'` creates no subscriptions, event-to-level mapping, custom `logger` receives structured entries, default sink uses the matching `console` method, no payload, password, username or URL userinfo ever appears in an entry, `logLevel` and `logger` are not passed to `mqtt.connect`
 
 ### Integration tests (`npm run test:integration`)
 
@@ -200,7 +245,7 @@ Plain Markdown, no emoji, readable in about a minute:
 2. Why ngx-mqtt: shared ref-counted subscriptions, automatic unsubscribe, wildcard routing, retained replay, zoneless and signal ready.
 3. Install and compatibility table (ngx-mqtt major, Angular range, MQTT.js major).
 4. Quick start: `provideMqtt` in `app.config.ts` and one component observing a topic with `toSignal` and publishing.
-5. Usage: retained messages, connection state (Observable and Signal), manual connect, lifecycle events, custom client.
+5. Usage: retained messages, connection state (Observable and Signal), manual connect, lifecycle events, logging (levels, silent, custom logger), custom client.
 6. Configuration table for ngx-mqtt specific options, link to MQTT.js for the rest, note on `ws`/`wss` only.
 7. Upgrading from 17.x: link to MIGRATION.md.
 8. Contributing: Dev Container or `docker compose up mosquitto`, then test, integration test and demo commands.
@@ -217,7 +262,7 @@ The root README is copied into the package at build time. The link to the old gh
 - `state` and `messages` read-only; new `connectionState` signal
 - `mqtt-browser` and `mqtt-packet` types to `mqtt` v5 types
 - resubscription now handled by MQTT.js
-- errors no longer logged to `console.error`
+- logging is now configurable: errors are still logged to the console by default (`logLevel: 'error'`); use `logLevel: 'silent'` to turn it off, a lower level for more output, or `logger` to route entries elsewhere
 - injected options no longer mutated
 - peer range Angular 21 to 23, Node 22 for development
 - Buffer and `url` polyfills no longer required
