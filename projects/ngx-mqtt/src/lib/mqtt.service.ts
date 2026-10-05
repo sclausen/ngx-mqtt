@@ -39,6 +39,14 @@ export const MISSING_CONFIG_ERROR =
   'ngx-mqtt: no configuration found. Add provideMqtt(options) to your application providers.';
 const NOT_CONNECTED_ERROR = 'mqtt client not connected';
 
+interface SubackPacketLike {
+  granted?: unknown;
+}
+
+interface ErrorWithPacket extends Error {
+  packet?: SubackPacketLike;
+}
+
 interface ActiveSubscription {
   opts: IClientSubscribeOptions;
   rejected: Subject<never>;
@@ -174,14 +182,17 @@ export class MqttService {
     this.client?.subscribe(
       filterString,
       entry.opts,
-      (_error: Error | null, granted?: ISubscriptionGrant[]) => {
-        granted?.forEach((grant) => {
-          const accepted = grant.qos !== 128;
-          this._onSuback.next({ filter: filterString, granted: accepted });
-          if (!accepted) {
-            entry.rejected.error(new Error(`subscription for '${grant.topic}' rejected!`));
-          }
-        });
+      (error: Error | null, granted?: ISubscriptionGrant[], packet?: SubackPacketLike) => {
+        const reasonCodes = (packet ?? (error as ErrorWithPacket | null)?.packet)?.granted;
+        const rejected = Array.isArray(reasonCodes)
+          ? reasonCodes.some((code) => (code & 0x80) !== 0)
+          : (granted?.some((grant) => grant.qos >= 128) ?? false);
+        if (rejected) {
+          this._onSuback.next({ filter: filterString, granted: false });
+          entry.rejected.error(new Error(`subscription for '${filterString}' rejected!`));
+        } else if (!error) {
+          this._onSuback.next({ filter: filterString, granted: true });
+        }
       },
     );
   }

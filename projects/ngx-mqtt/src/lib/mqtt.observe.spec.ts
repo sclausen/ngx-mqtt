@@ -85,13 +85,39 @@ describe('MqttService.observe', () => {
 
   it('errors the observable when the broker rejects the subscription', async () => {
     const { service, fake } = setup();
-    fake.grantedQos = 128;
+    fake.subackReasonCode = 0x80;
     const suback = firstValueFrom(service.onSuback);
     const result = firstValueFrom(service.observe('forbidden'));
     await expect(result).rejects.toThrowError("subscription for 'forbidden' rejected!");
     expect(await suback).toEqual<IOnSubackEvent>({ filter: 'forbidden', granted: false });
     expect(fake.unsubscribeCalls).toEqual(['forbidden']);
     expect(service.observables).toEqual({});
+  });
+
+  it('treats MQTT 5 failure reason codes as rejection', async () => {
+    const { service, fake } = setup();
+    fake.subackReasonCode = 0x87;
+    await expect(firstValueFrom(service.observe('forbidden'))).rejects.toThrowError(
+      "subscription for 'forbidden' rejected!",
+    );
+  });
+
+  it('ignores subscribe errors without a SUBACK', async () => {
+    const { service, fake } = setup();
+    fake.subscribeError = new Error('closed');
+    const events: IOnSubackEvent[] = [];
+    service.onSuback.subscribe((event) => events.push(event));
+    const errors: unknown[] = [];
+    const received: string[] = [];
+    service.observe('a').subscribe({
+      next: (m) => received.push(text(m)),
+      error: (e) => errors.push(e),
+    });
+    await flush();
+    fake.deliver('a', 'still');
+    expect(events).toEqual([]);
+    expect(errors).toEqual([]);
+    expect(received).toEqual(['still']);
   });
 
   it('throws when not connected', () => {

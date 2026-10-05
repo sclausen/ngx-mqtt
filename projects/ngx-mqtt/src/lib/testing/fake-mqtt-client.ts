@@ -33,14 +33,40 @@ export class FakeMqttClient extends Emitter {
   readonly endCalls: boolean[] = [];
   grantedQos: ISubscriptionGrant['qos'] = 1;
   publishError: Error | undefined;
+  subackReasonCode: number | undefined;
+  subscribeError: Error | undefined;
 
   subscribe(
     filter: string,
     opts: IClientSubscribeOptions,
-    callback?: (error: Error | null, granted?: ISubscriptionGrant[]) => void,
+    callback?: (
+      error: Error | null,
+      granted?: ISubscriptionGrant[],
+      packet?: { cmd: 'suback'; granted: number[] },
+    ) => void,
   ): this {
     this.subscribeCalls.push({ filter, opts });
-    queueMicrotask(() => callback?.(null, [{ topic: filter, qos: this.grantedQos }]));
+    queueMicrotask(() => {
+      if (this.subscribeError) {
+        callback?.(this.subscribeError, undefined, undefined);
+        return;
+      }
+      const code = this.subackReasonCode;
+      if (code !== undefined && (code & 0x80) !== 0) {
+        const packet = { cmd: 'suback' as const, granted: [code] };
+        const error = Object.assign(new Error('Subscribe error'), { code, packet });
+        callback?.(
+          error,
+          [{ topic: filter, qos: (opts.qos ?? 0) as ISubscriptionGrant['qos'] }],
+          packet,
+        );
+        return;
+      }
+      callback?.(null, [{ topic: filter, qos: this.grantedQos }], {
+        cmd: 'suback',
+        granted: [this.grantedQos],
+      });
+    });
     return this;
   }
 
