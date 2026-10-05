@@ -1,14 +1,166 @@
-# ngx-mqtt [![npm](https://img.shields.io/npm/v/ngx-mqtt.svg)](https://www.npmjs.com/package/ngx-mqtt) [![Travis](https://img.shields.io/travis/sclausen/ngx-mqtt.svg)](https://travis-ci.org/sclausen/ngx-mqtt)
+# ngx-mqtt
 
-This library isn't just a wrapper around MQTT.js for angular.
-It uses observables and takes care of subscription handling and message routing.
+Reactive MQTT for Angular. Topic subscriptions as Observables and Signals, shared and ref-counted, on top of MQTT.js v5.
 
-Since it's based on the browserified version of mqtt.js, this means although you have the possibility to use `mqtt`, `mqtts`, `tcp`, `ssl`, `wx` or `wxs` as the protocol in the client options, you can't use it, because this is a browser library where you can't conntect with mqtt directly via tcp, but with websockets. You also can't use `key`, `cert` and `ca` for the same reasons.
+[![npm](https://img.shields.io/npm/v/ngx-mqtt.svg)](https://www.npmjs.com/package/ngx-mqtt)
+[![CI](https://github.com/sclausen/ngx-mqtt/actions/workflows/ci.yml/badge.svg)](https://github.com/sclausen/ngx-mqtt/actions/workflows/ci.yml)
+[![downloads](https://img.shields.io/npm/dm/ngx-mqtt.svg)](https://www.npmjs.com/package/ngx-mqtt)
+[![license](https://img.shields.io/npm/l/ngx-mqtt.svg)](LICENSE)
 
-If you have any issues using this library, please visit it's [homepage](https://sclausen.github.io/ngx-mqtt/) and look for similar issues in the issue tracker before you file a bug.
+## Why ngx-mqtt
 
-## **ngx-mqtt >= 7 is only compatible with angular >= 9**
+- **One broker subscription per filter.** Any number of components can observe `sensors/+/temp`; the broker sees a single SUBSCRIBE.
+- **Automatic cleanup.** When the last subscriber unsubscribes, ngx-mqtt sends the UNSUBSCRIBE for you.
+- **Wildcard routing.** Messages are dispatched to every matching `+` and `#` filter.
+- **Retained replay.** `observeRetained` hands the latest message to late subscribers instantly.
+- **Modern Angular.** Standalone providers, a `connectionState` signal, zoneless ready, published with npm provenance.
 
-## Local development
+## Install
 
-For local development all peer dependency automatically installed during install.
+```bash
+npm install ngx-mqtt
+```
+
+| ngx-mqtt | Angular | MQTT.js |
+| -------- | ------- | ------- |
+| 22.x     | 21 - 23 | 5.x     |
+| 17.x     | 14 - 17 | 4.x     |
+
+## Quick start
+
+```ts
+// app.config.ts
+import { ApplicationConfig } from '@angular/core';
+import { provideMqtt } from 'ngx-mqtt';
+
+export const appConfig: ApplicationConfig = {
+  providers: [provideMqtt({ url: 'wss://broker.example.com/mqtt' })],
+};
+```
+
+```ts
+// temperature.ts
+import { Component, inject } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { map } from 'rxjs';
+import { MqttService } from 'ngx-mqtt';
+
+@Component({
+  selector: 'app-temperature',
+  template: `
+    <p>Kitchen: {{ temperature() ?? 'waiting...' }}</p>
+    <button (click)="reset()">Reset</button>
+  `,
+})
+export class Temperature {
+  private readonly mqtt = inject(MqttService);
+
+  protected readonly temperature = toSignal(
+    this.mqtt
+      .observe('home/kitchen/temperature')
+      .pipe(map((message) => new TextDecoder().decode(message.payload))),
+  );
+
+  protected reset(): void {
+    this.mqtt.unsafePublish('home/kitchen/reset', 'now');
+  }
+}
+```
+
+## Usage
+
+### Retained messages
+
+```ts
+this.mqtt.observeRetained('home/status').subscribe((message) => console.log(message.topic));
+```
+
+### Connection state
+
+```ts
+readonly state = this.mqtt.connectionState;      // Signal<MqttConnectionState>
+this.mqtt.state.subscribe((state) => { ... });  // Observable<MqttConnectionState>
+```
+
+### Connecting manually
+
+```ts
+provideMqtt({ url: 'wss://broker.example.com/mqtt', connectOnCreate: false });
+
+this.mqtt.connect({ username: 'alice', password: token });
+this.mqtt.disconnect();
+```
+
+### Publishing
+
+```ts
+this.mqtt.publish('home/light', 'on', { qos: 1 }).subscribe({
+  complete: () => console.log('delivered'),
+  error: (error) => console.error(error),
+});
+```
+
+`publish` is lazy and sends when subscribed. `unsafePublish` sends immediately.
+
+### Lifecycle events
+
+`onConnect`, `onReconnect`, `onClose`, `onOffline`, `onError`, `onEnd`, `onMessage`, `onSuback`, `onPacketsend` and `onPacketreceive` are Observables.
+
+### Logging
+
+ngx-mqtt logs errors to the console by default. Change the level, silence it, or route entries to your own logger:
+
+```ts
+provideMqtt({ url, logLevel: 'warn' }); // 'debug' | 'info' | 'warn' | 'error' | 'silent'
+provideMqtt({ url, logLevel: 'silent' });
+provideMqtt({ url, logger: (entry) => myLogger.log(entry.level, entry.message, entry) });
+```
+
+Entries are structured (`level`, `event`, `message`, `clientId`, `timestamp`, `context`) and never contain payloads, credentials or URL userinfo.
+
+### Custom client
+
+```ts
+import mqtt from 'mqtt';
+
+provideMqtt({}, mqtt.connect('wss://broker.example.com/mqtt', { clientId: 'my-app' }));
+```
+
+## Configuration
+
+`provideMqtt` accepts every [MQTT.js client option](https://github.com/mqttjs/MQTT.js#client) plus:
+
+| Option            | Default     | Description                                                                  |
+| ----------------- | ----------- | ---------------------------------------------------------------------------- |
+| `url`             |             | Broker URL. When set, `protocol`, `hostname`, `port` and `path` are ignored. |
+| `protocol`        | `ws`        | `ws` or `wss`.                                                               |
+| `hostname`        | `localhost` | Broker host.                                                                 |
+| `port`            |             | Broker websocket port.                                                       |
+| `path`            |             | Websocket path, for example `/mqtt`.                                         |
+| `connectOnCreate` | `true`      | Connect as soon as `MqttService` is created.                                 |
+| `logLevel`        | `error`     | `debug`, `info`, `warn`, `error` or `silent`.                                |
+| `logger`          | console     | Function receiving structured log entries.                                   |
+
+Browsers can only open websockets, so only `ws` and `wss` brokers are supported; TLS client certificates (`key`, `cert`, `ca`) are not available.
+
+## Upgrading from 17.x
+
+See [MIGRATION.md](MIGRATION.md).
+
+## Contributing
+
+Open the repository in a Dev Container (VS Code, JetBrains or Codespaces) to get Node 24 and a Mosquitto broker with no local setup. Without the container:
+
+```bash
+docker compose up -d mosquitto
+npm ci
+npm test                  # unit tests
+npm run test:integration  # browser tests against Mosquitto
+npm start                 # demo app on http://localhost:4200
+```
+
+Commits follow [Conventional Commits](https://www.conventionalcommits.org); releases are created automatically.
+
+## License
+
+[MIT](LICENSE)
