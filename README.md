@@ -155,6 +155,7 @@ Open the repository in a Dev Container (VS Code, JetBrains or Codespaces) to get
 docker compose up -d mosquitto
 npm ci
 npm test                  # unit tests
+npx playwright install chromium
 npm run test:integration  # browser tests against Mosquitto
 npm start                 # demo app on http://localhost:4200
 ```

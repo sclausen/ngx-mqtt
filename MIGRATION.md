@@ -58,7 +58,7 @@ provideMqtt({ ...options, logger: (entry) => myLogger.log(entry) });
 
 ## 7. Smaller changes
 
-- The injected options object is no longer mutated by `connect()`.
+- The injected options object is no longer mutated by `connect()`. As a consequence, options passed to `connect()` apply to that call only; later `connect()` calls start again from the `provideMqtt` options.
 - `MQTT_SERVICE_OPTIONS` was removed.
 - Generated client IDs start with `ngx-mqtt-` instead of `client-`.
 - A subscription rejected by the broker errors with an `Error` instead of a string.
