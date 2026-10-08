@@ -1,6 +1,6 @@
 {
   "name": "ngx-mqtt",
-  "version": "17.0.0",
+  "version": "22.0.0",
   "description": "Reactive MQTT for Angular: ref-counted topic subscriptions as Observables and Signals on top of MQTT.js v5",
   "repository": {
     "type": "git",

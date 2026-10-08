@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [22.0.0](https://github.com/sclausen/ngx-mqtt/compare/v17.0.0...v22.0.0) (2026-10-08)
+
+
+### ⚠ BREAKING CHANGES
+
+* ngx-mqtt 22 requires Angular 21 to 23 and MQTT.js 5. See the upgrade guide: https://github.com/sclausen/ngx-mqtt/blob/master/MIGRATION.md
+
+### Features
+
+* modernize ngx-mqtt for Angular 22 and MQTT.js 5 ([#245](https://github.com/sclausen/ngx-mqtt/issues/245)) ([daec4ed](https://github.com/sclausen/ngx-mqtt/commit/daec4ed5399cb59847812432d63a4240713ff28c))
+
 ### [7.0.12](https://github.com/sclausen/ngx-mqtt/compare/v7.0.8...v7.0.12) (2020-08-19)
 
 ### [7.0.8](https://github.com/sclausen/ngx-mqtt/compare/v7.0.7...v7.0.8) (2020-08-11)
