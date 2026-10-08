@@ -1,6 +1,6 @@
 {
   "name": "ngx-mqtt-workspace",
-  "version": "17.0.0",
+  "version": "22.0.0",
   "private": true,
   "packageManager": "npm@11.21.0",
   "engines": {
