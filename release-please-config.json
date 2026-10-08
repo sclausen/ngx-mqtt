@@ -1,0 +1,20 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "bootstrap-sha": "252be79f20a424936d2832bdda4ce0e2bcec0b04",
+  "packages": {
+    ".": {
+      "release-type": "node",
+      "release-as": "22.0.0",
+      "package-name": "ngx-mqtt",
+      "changelog-path": "CHANGELOG.md",
+      "include-component-in-tag": false,
+      "extra-files": [
+        {
+          "type": "json",
+          "path": "projects/ngx-mqtt/package.json",
+          "jsonpath": "$.version"
+        }
+      ]
+    }
+  }
+}

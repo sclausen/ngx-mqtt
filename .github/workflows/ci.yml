@@ -1,0 +1,75 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run format:check
+
+  unit:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        angular: ['21', '22']
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - if: matrix.angular == '21'
+        run: >
+          npm install --no-save --legacy-peer-deps
+          @angular/core@21 @angular/common@21 @angular/compiler@21 @angular/platform-browser@21
+          @angular/compiler-cli@21 @angular/build@21 @angular/cli@21 typescript@~5.9
+      - run: npm test
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npm run check:package
+      - run: npm pack ./dist/ngx-mqtt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: package
+          path: ngx-mqtt-*.tgz
+
+  integration:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: docker compose up -d --wait mosquitto
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:integration
+      - if: always()
+        run: docker compose down

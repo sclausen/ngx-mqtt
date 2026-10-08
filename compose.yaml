@@ -1,0 +1,27 @@
+services:
+  mosquitto:
+    image: eclipse-mosquitto:2
+    ports:
+      - '127.0.0.1:1883:1883'
+      - '127.0.0.1:9001:9001'
+    volumes:
+      - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+    healthcheck:
+      test: ['CMD', 'mosquitto_sub', '-t', '$$SYS/broker/version', '-C', '1', '-W', '3']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  dev:
+    image: mcr.microsoft.com/devcontainers/typescript-node:24
+    network_mode: service:mosquitto
+    volumes:
+      - .:/workspaces/ngx-mqtt:cached
+      - node_modules:/workspaces/ngx-mqtt/node_modules
+    command: sleep infinity
+    depends_on:
+      mosquitto:
+        condition: service_healthy
+
+volumes:
+  node_modules: {}

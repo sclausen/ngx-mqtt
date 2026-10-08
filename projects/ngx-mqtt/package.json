@@ -1,14 +1,21 @@
 {
   "name": "ngx-mqtt",
   "version": "17.0.0",
+  "description": "Reactive MQTT for Angular: ref-counted topic subscriptions as Observables and Signals on top of MQTT.js v5",
   "repository": {
     "type": "git",
-    "url": "https://github.com/sclausen/ngx-mqtt.git"
+    "url": "git+https://github.com/sclausen/ngx-mqtt.git"
   },
+  "homepage": "https://github.com/sclausen/ngx-mqtt#readme",
+  "bugs": "https://github.com/sclausen/ngx-mqtt/issues",
   "keywords": [
     "angular",
     "ngx",
-    "mqtt"
+    "mqtt",
+    "rxjs",
+    "signals",
+    "websocket",
+    "iot"
   ],
   "author": {
     "name": "sclausen"
@@ -23,12 +30,12 @@
   ],
   "license": "MIT",
   "peerDependencies": {
-    "@angular/common": ">=14",
-    "@angular/core": ">=14"
+    "@angular/common": ">=21.0.0 <24.0.0",
+    "@angular/core": ">=21.0.0 <24.0.0",
+    "rxjs": "^7.8.0"
   },
   "dependencies": {
-    "mqtt-browser": "4.3.7",
-    "mqtt-packet": "^6.10.0",
+    "mqtt": "^5.16.0",
     "tslib": "^2.3.0"
   },
   "sideEffects": false

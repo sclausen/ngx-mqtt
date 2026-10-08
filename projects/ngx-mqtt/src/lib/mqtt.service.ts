@@ -1,413 +1,336 @@
-import { EventEmitter, Inject, Injectable } from '@angular/core';
-import { connect, IClientPublishOptions, IClientSubscribeOptions, ISubscriptionGrant, MqttClient } from 'mqtt-browser';
-import { Packet } from 'mqtt-packet';
-
-import { BehaviorSubject, merge, Observable, Observer, Subject, Subscription, Unsubscribable, using } from 'rxjs';
-import { filter, publish, publishReplay, refCount } from 'rxjs/operators';
-
+import { DestroyRef, Injectable, type Signal, inject, signal } from '@angular/core';
+import mqtt, {
+  type IClientPublishOptions,
+  type IClientSubscribeOptions,
+  type IConnackPacket,
+  type IPublishPacket,
+  type ISubscriptionGrant,
+  type MqttClient,
+  type Packet,
+} from 'mqtt';
 import {
-  IMqttMessage,
-  IMqttServiceOptions,
-  IOnConnectEvent,
-  IOnErrorEvent,
-  IOnPacketreceiveEvent,
-  IOnPacketsendEvent,
-  IOnSubackEvent,
-  IPublishOptions,
-  MqttConnectionState
+  BehaviorSubject,
+  filter,
+  merge,
+  type MonoTypeOperatorFunction,
+  Observable,
+  share,
+  shareReplay,
+  Subject,
+} from 'rxjs';
+import type { MqttInternalEvent } from './mqtt.internal';
+import { startLogging } from './mqtt.logger';
+import {
+  type IMqttMessage,
+  type IOnConnectEvent,
+  type IOnErrorEvent,
+  type IOnPacketreceiveEvent,
+  type IOnPacketsendEvent,
+  type IOnSubackEvent,
+  MqttConnectionState,
+  type MqttPayload,
+  type MqttServiceOptions,
 } from './mqtt.model';
+import { generateClientId, mergeOptions, resolveUrl, toClientOptions } from './mqtt.options';
+import { MqttClientService, MqttServiceConfig } from './mqtt.tokens';
+import { filterMatchesTopic, isValidTopicFilter } from './topic-filter';
 
-import { MqttClientService, MqttServiceConfig } from './mqtt.module';
+export const MISSING_CONFIG_ERROR =
+  'ngx-mqtt: no configuration found. Add provideMqtt(options) to your application providers.';
+const NOT_CONNECTED_ERROR = 'mqtt client not connected';
 
-// A javascript function that takes two objects and merges them recursively
-function mergeDeep(target: any, ...sources: any[]): any {
-  if (!sources.length) {
-    return target;
-  }
-  const source = sources.shift();
-
-  if (isObject(target) && isObject(source)) {
-    for (const key in source) {
-      if (isObject(source[key])) {
-        if (!target[key]) {
-          Object.assign(target, { [key]: {} });
-        }
-        mergeDeep(target[key], source[key]);
-      } else {
-        Object.assign(target, { [key]: source[key] });
-      }
-    }
-  }
-
-  return mergeDeep(target, ...sources);
+interface SubackPacketLike {
+  granted?: unknown;
 }
 
-function isObject(item: any): item is Object {
-  return item && typeof item === 'object' && !Array.isArray(item);
+interface ErrorWithPacket extends Error {
+  packet?: SubackPacketLike;
 }
 
-/**
- * With an instance of MqttService, you can observe and subscribe to MQTT in multiple places, e.g. in different components,
- * to only subscribe to the broker once per MQTT filter.
- * It also handles proper unsubscription from the broker, if the last observable with a filter is closed.
- */
-@Injectable({
-  providedIn: 'root',
-})
+interface ActiveSubscription {
+  opts: IClientSubscribeOptions;
+  rejected: Subject<never>;
+  count: number;
+}
+
+@Injectable({ providedIn: 'root' })
 export class MqttService {
-  private client!: MqttClient;
+  static readonly filterMatchesTopic = filterMatchesTopic;
 
-  /**
-   * The constructor needs [connection options]{@link IMqttServiceOptions} regarding the broker and some
-   * options to configure behavior of this service, like if the connection to the broker
-   * should be established on creation of this service or not.
-   */
-  constructor(
-    @Inject(MqttServiceConfig) private options: IMqttServiceOptions,
-    @Inject(MqttClientService) client?: MqttClient
-  ) {
+  private readonly options: MqttServiceOptions;
+  private client: MqttClient | undefined;
+  private _clientId: string;
+  private readonly active = new Map<string, ActiveSubscription>();
+  private readonly internalEvents = new Subject<MqttInternalEvent>();
+
+  private readonly _state = new BehaviorSubject(MqttConnectionState.CLOSED);
+  private readonly _connectionState = signal(MqttConnectionState.CLOSED);
+  private readonly _messages = new Subject<IMqttMessage>();
+  private readonly _onConnect = new Subject<IOnConnectEvent>();
+  private readonly _onReconnect = new Subject<void>();
+  private readonly _onClose = new Subject<void>();
+  private readonly _onOffline = new Subject<void>();
+  private readonly _onError = new Subject<IOnErrorEvent>();
+  private readonly _onEnd = new Subject<void>();
+  private readonly _onMessage = new Subject<Packet>();
+  private readonly _onSuback = new Subject<IOnSubackEvent>();
+  private readonly _onPacketsend = new Subject<IOnPacketsendEvent>();
+  private readonly _onPacketreceive = new Subject<IOnPacketreceiveEvent>();
+
+  readonly state: Observable<MqttConnectionState> = this._state.asObservable();
+  readonly connectionState: Signal<MqttConnectionState> = this._connectionState.asReadonly();
+  readonly messages: Observable<IMqttMessage> = this._messages.asObservable();
+  readonly onConnect: Observable<IOnConnectEvent> = this._onConnect.asObservable();
+  readonly onReconnect: Observable<void> = this._onReconnect.asObservable();
+  readonly onClose: Observable<void> = this._onClose.asObservable();
+  readonly onOffline: Observable<void> = this._onOffline.asObservable();
+  readonly onError: Observable<IOnErrorEvent> = this._onError.asObservable();
+  readonly onEnd: Observable<void> = this._onEnd.asObservable();
+  readonly onMessage: Observable<Packet> = this._onMessage.asObservable();
+  readonly onSuback: Observable<IOnSubackEvent> = this._onSuback.asObservable();
+  readonly onPacketsend: Observable<IOnPacketsendEvent> = this._onPacketsend.asObservable();
+  readonly onPacketreceive: Observable<IOnPacketreceiveEvent> =
+    this._onPacketreceive.asObservable();
+
+  observables: Record<string, Observable<IMqttMessage>> = {};
+
+  constructor() {
+    const options = inject(MqttServiceConfig, { optional: true });
+    if (!options) {
+      throw new Error(MISSING_CONFIG_ERROR);
+    }
+    const client = inject(MqttClientService, { optional: true }) ?? undefined;
+    this.options = options;
+    this._clientId = options.clientId ?? generateClientId();
+    const logging = startLogging(this, this.internalEvents, options, () => this._clientId);
+    inject(DestroyRef).onDestroy(() => {
+      logging.unsubscribe();
+      this.client?.end(true);
+    });
     if (options.connectOnCreate !== false) {
       this.connect({}, client);
     }
-
-    this.state.subscribe();
   }
 
-  /**
-   * gets the _clientId
-   */
-  public get clientId() {
+  get clientId(): string {
     return this._clientId;
   }
 
-  /** An EventEmitter to listen to connect messages */
-  public get onConnect(): EventEmitter<IOnConnectEvent> {
-    return this._onConnect;
+  connect(opts?: MqttServiceOptions, client?: MqttClient): void {
+    const merged = mergeOptions(
+      { clientId: this._clientId, reconnectPeriod: 10000, connectTimeout: 10000 },
+      this.options,
+      opts,
+    );
+    const next = client ?? mqtt.connect(resolveUrl(merged), toClientOptions(merged));
+    this._clientId = merged.clientId ?? this._clientId;
+    const previous = this.client;
+    this.setState(MqttConnectionState.CONNECTING);
+    this.client = next;
+    previous?.end(true);
+    this.bind(this.client);
+    this.active.forEach((subscription, filterString) =>
+      this.brokerSubscribe(filterString, subscription),
+    );
   }
 
-  /** An EventEmitter to listen to reconnect messages */
-  public get onReconnect(): EventEmitter<void> {
-    return this._onReconnect;
+  disconnect(force = true): void {
+    this.requireClient().end(force);
   }
 
-  /** An EventEmitter to listen to close messages */
-  public get onClose(): EventEmitter<void> {
-    return this._onClose;
+  observe(
+    filterString: string,
+    opts: IClientSubscribeOptions = { qos: 1 },
+  ): Observable<IMqttMessage> {
+    return this.generalObserve(filterString, share(), opts);
   }
 
-  /** An EventEmitter to listen to offline events */
-  public get onOffline(): EventEmitter<void> {
-    return this._onOffline;
+  observeRetained(
+    filterString: string,
+    opts: IClientSubscribeOptions = { qos: 1 },
+  ): Observable<IMqttMessage> {
+    return this.generalObserve(filterString, shareReplay({ bufferSize: 1, refCount: true }), opts);
   }
 
-  /** An EventEmitter to listen to error events */
-  public get onError(): EventEmitter<IOnErrorEvent> {
-    return this._onError;
-  }
-
-  /** An EventEmitter to listen to close messages */
-  public get onEnd(): EventEmitter<void> {
-    return this._onEnd;
-  }
-
-  /** An EventEmitter to listen to message events */
-  public get onMessage(): EventEmitter<Packet> {
-    return this._onMessage;
-  }
-
-  /** An EventEmitter to listen to packetsend messages */
-  public get onPacketsend(): EventEmitter<IOnPacketsendEvent> {
-    return this._onPacketsend;
-  }
-
-  /** An EventEmitter to listen to packetreceive messages */
-  public get onPacketreceive(): EventEmitter<IOnPacketreceiveEvent> {
-    return this._onPacketreceive;
-  }
-
-  /** An EventEmitter to listen to suback events */
-  public get onSuback(): EventEmitter<IOnSubackEvent> {
-    return this._onSuback;
-  }
-  /** a map of all mqtt observables by filter */
-  public observables: { [filterString: string]: Observable<IMqttMessage> } = {};
-  /** the connection state */
-  public state: Subject<MqttConnectionState> = new BehaviorSubject<MqttConnectionState>(MqttConnectionState.CLOSED);
-  /** an observable of the last mqtt message */
-  public messages: Subject<IMqttMessage> = new Subject<IMqttMessage>();
-
-  private _clientId = this._generateClientId();
-  private _connectTimeout = 10000;
-  private _reconnectPeriod = 10000;
-  private _url!: string;
-
-  private _onConnect: EventEmitter<IOnConnectEvent> = new EventEmitter<IOnConnectEvent>();
-  private _onReconnect: EventEmitter<void> = new EventEmitter<void>();
-  private _onClose: EventEmitter<void> = new EventEmitter<void>();
-  private _onOffline: EventEmitter<void> = new EventEmitter<void>();
-  private _onError: EventEmitter<IOnErrorEvent> = new EventEmitter<IOnErrorEvent>();
-  private _onEnd: EventEmitter<void> = new EventEmitter<void>();
-  private _onMessage: EventEmitter<Packet> = new EventEmitter<Packet>();
-  private _onSuback: EventEmitter<IOnSubackEvent> = new EventEmitter<IOnSubackEvent>();
-  private _onPacketsend: EventEmitter<IOnPacketsendEvent> = new EventEmitter<IOnPacketsendEvent>();
-  private _onPacketreceive: EventEmitter<IOnPacketreceiveEvent> = new EventEmitter<IOnPacketreceiveEvent>();
-
-  /**
-   * This static method shall be used to determine whether a MQTT
-   * topic matches a given filter. The matching rules are specified in the MQTT
-   * standard documentation and in the library test suite.
-   *
-   * @param  {string}  filter A filter may contain wildcards like '#' and '+'.
-   * @param  {string}  topic  A topic may not contain wildcards.
-   * @return {boolean}        true on match and false otherwise.
-   */
-  public static filterMatchesTopic(filterString: string, topic: string): boolean {
-    if (filterString[0] === '#' && topic[0] === '$') {
-      return false;
+  private generalObserve(
+    filterString: string,
+    sharing: MonoTypeOperatorFunction<IMqttMessage>,
+    opts: IClientSubscribeOptions,
+  ): Observable<IMqttMessage> {
+    this.requireClient();
+    const existing = this.observables[filterString];
+    if (existing) {
+      return existing;
     }
-    // Preparation: split and reverse on '/'. The JavaScript split function is sane.
-    const fs = (filterString || '').split('/').reverse();
-    const ts = (topic || '').split('/').reverse();
-    // This function is tail recursive and compares both arrays one element at a time.
-    const match = (): boolean => {
-      // Cutting of the last element of both the filter and the topic using pop().
-      const f = fs.pop();
-      const t = ts.pop();
-      switch (f) {
-        // In case the filter level is '#', this is a match no matter whether
-        // the topic is undefined on this level or not ('#' matches parent element as well!).
-        case '#':
-          return true;
-        // In case the filter level is '+', we shall dive into the recursion only if t is not undefined.
-        case '+':
-          return t ? match() : false;
-        // In all other cases the filter level must match the topic level,
-        // both must be defined and the filter tail must match the topic
-        // tail (which is determined by the recursive call of match()).
-        default:
-          return f === t && (f === undefined ? true : match());
+    const observable: Observable<IMqttMessage> = new Observable<IMqttMessage>((subscriber) => {
+      if (!isValidTopicFilter(filterString)) {
+        if (this.observables[filterString] === observable) {
+          delete this.observables[filterString];
+        }
+        subscriber.error(new Error(`invalid topic filter '${filterString}'`));
+        return undefined;
       }
-    };
-    return match();
+      this.observables[filterString] ??= observable;
+      const entry = this.acquire(filterString, opts);
+      const inner = merge(entry.rejected, this._messages)
+        .pipe(filter((message) => filterMatchesTopic(filterString, message.topic)))
+        .subscribe(subscriber);
+      return () => {
+        inner.unsubscribe();
+        if (this.observables[filterString] === observable) {
+          delete this.observables[filterString];
+        }
+        this.release(filterString, entry);
+      };
+    }).pipe(sharing);
+    this.observables[filterString] = observable;
+    return observable;
   }
 
-  /**
-   * connect manually connects to the mqtt broker.
-   */
-  public connect(opts?: IMqttServiceOptions, client?: MqttClient) {
-    const options = mergeDeep(this.options || {}, opts);
-    const protocol = options.protocol || 'ws';
-    const hostname = options.hostname || 'localhost';
-    if (options.url) {
-      this._url = options.url;
-    } else {
-      this._url = `${protocol}://${hostname}`;
-      this._url += options.port ? `:${options.port}` : '';
-      this._url += options.path ? `${options.path}` : '';
+  private acquire(filterString: string, opts: IClientSubscribeOptions): ActiveSubscription {
+    const existing = this.active.get(filterString);
+    if (existing) {
+      existing.count++;
+      return existing;
     }
-    this.state.next(MqttConnectionState.CONNECTING);
-    const mergedOptions = mergeDeep({
-      clientId: this._clientId,
-      reconnectPeriod: this._reconnectPeriod,
-      connectTimeout: this._connectTimeout
-    }, options);
-
-    if (this.client) {
-      this.client.end(true);
-    }
-
-    if (!client) {
-      this.client = connect(this._url, mergedOptions);
-    } else {
-      this.client = client;
-    }
-    this._clientId = mergedOptions.clientId;
-
-    this.client.on('connect', this._handleOnConnect);
-    this.client.on('reconnect', this._handleOnReconnect);
-    this.client.on('close', this._handleOnClose);
-    this.client.on('offline', this._handleOnOffline);
-    this.client.on('error', this._handleOnError);
-    (this.client as any).stream.on('error', this._handleOnError);
-    this.client.on('end', this._handleOnEnd);
-    this.client.on('message', this._handleOnMessage);
-    this.client.on('packetsend', this._handleOnPacketsend);
-    this.client.on('packetreceive', this._handleOnPacketreceive);
+    const entry: ActiveSubscription = { opts, rejected: new Subject<never>(), count: 1 };
+    this.active.set(filterString, entry);
+    this.internalEvents.next({ type: 'subscribe', filter: filterString });
+    this.brokerSubscribe(filterString, entry);
+    return entry;
   }
 
-  /**
-   * disconnect disconnects from the mqtt client.
-   * This method `should` be executed when leaving the application.
-   */
-  public disconnect(force = true) {
-    if (!this.client) {
-      throw new Error('mqtt client not connected');
+  private release(filterString: string, entry: ActiveSubscription): void {
+    entry.count--;
+    if (entry.count > 0) {
+      return;
     }
-    this.client.end(force);
+    this.active.delete(filterString);
+    this.internalEvents.next({ type: 'unsubscribe', filter: filterString });
+    this.client?.unsubscribe(filterString);
   }
 
-  /**
-   * With this method, you can observe messages for a mqtt topic.
-   * The observable will only emit messages matching the filter.
-   * The first one subscribing to the resulting observable executes a mqtt subscribe.
-   * The last one unsubscribing this filter executes a mqtt unsubscribe.
-   * Every new subscriber gets the latest message.
-   */
-  public observeRetained(filterString: string, opts: IClientSubscribeOptions = { qos: 1 }): Observable<IMqttMessage> {
-    return this._generalObserve(filterString, () => publishReplay(1), opts);
+  private brokerSubscribe(filterString: string, entry: ActiveSubscription): void {
+    this.client?.subscribe(
+      filterString,
+      entry.opts,
+      (error: Error | null, granted?: ISubscriptionGrant[], packet?: SubackPacketLike) => {
+        if (this.active.get(filterString) !== entry) {
+          return;
+        }
+        const reasonCodes = (packet ?? (error as ErrorWithPacket | null)?.packet)?.granted;
+        const rejected = Array.isArray(reasonCodes)
+          ? reasonCodes.some((code) => (code & 0x80) !== 0)
+          : (granted?.some((grant) => grant.qos >= 128) ?? false);
+        if (rejected) {
+          this._onSuback.next({ filter: filterString, granted: false });
+          entry.rejected.error(new Error(`subscription for '${filterString}' rejected!`));
+        } else if (!error) {
+          this._onSuback.next({ filter: filterString, granted: true });
+        }
+      },
+    );
   }
 
-  /**
-   * With this method, you can observe messages for a mqtt topic.
-   * The observable will only emit messages matching the filter.
-   * The first one subscribing to the resulting observable executes a mqtt subscribe.
-   * The last one unsubscribing this filter executes a mqtt unsubscribe.
-   */
-  public observe(filterString: string, opts: IClientSubscribeOptions = { qos: 1 }): Observable<IMqttMessage> {
-    return this._generalObserve(filterString, () => publish(), opts);
-  }
-
-  /**
-   * With this method, you can observe messages for a mqtt topic.
-   * The observable will only emit messages matching the filter.
-   * The first one subscribing to the resulting observable executes a mqtt subscribe.
-   * The last one unsubscribing this filter executes a mqtt unsubscribe.
-   * Depending on the publish function, the messages will either be replayed after new
-   * subscribers subscribe or the messages are just passed through
-   */
-  private _generalObserve(filterString: string, publishFn: Function, opts: IClientSubscribeOptions): Observable<IMqttMessage> {
-    if (!this.client) {
-      throw new Error('mqtt client not connected');
-    }
-    if (!this.observables[filterString]) {
-      const rejected: Subject<IMqttMessage> = new Subject();
-      this.observables[filterString] = using(
-        // resourceFactory: Do the actual ref-counting MQTT subscription.
-        // refcount is decreased on unsubscribe.
-        () => {
-          const subscription: Subscription = new Subscription();
-          this.client.subscribe(filterString, opts, (err: any, granted: ISubscriptionGrant[]) => {
-            if (granted) { // granted can be undefined when an error occurs when the client is disconnecting
-              granted.forEach((granted_: ISubscriptionGrant) => {
-                if (granted_.qos === 128) {
-                  delete this.observables[granted_.topic];
-                  this.client.unsubscribe(granted_.topic);
-                  rejected.error(`subscription for '${granted_.topic}' rejected!`);
-                }
-                this._onSuback.emit({ filter: filterString, granted: granted_.qos !== 128 });
-              });
-            }
-          });
-          subscription.add(() => {
-            delete this.observables[filterString];
-            this.client.unsubscribe(filterString);
-          });
-          return subscription;
-        },
-        // observableFactory: Create the observable that is consumed from.
-        // This part is not executed until the Observable returned by
-        // `observe` gets actually subscribed.
-        (subscription: Unsubscribable | void) => merge(rejected, this.messages))
-        .pipe(
-          filter((msg: IMqttMessage) => MqttService.filterMatchesTopic(filterString, msg.topic)),
-          publishFn(),
-          refCount()
-        ) as Observable<IMqttMessage>;
-    }
-    return this.observables[filterString];
-  }
-
-  /**
-   * This method returns an observable for a topic with optional options.
-   * After subscribing, the actual mqtt publication will be executed and
-   * the observable will emit an empty value and completes, if publishing was successful
-   * or throws an error, if the publication fails.
-   */
-  public publish(topic: string, message: string | Buffer, options: IClientPublishOptions = {}): Observable<void> {
-    if (!this.client) {
-      throw new Error('mqtt client not connected');
-    }
-    return Observable.create((obs: Observer<void>) => {
-      this.client.publish(topic, message, options, (error: Error | undefined) => {
+  publish(
+    topic: string,
+    message: MqttPayload,
+    options: IClientPublishOptions = {},
+  ): Observable<void> {
+    const client = this.requireClient();
+    return new Observable<void>((subscriber) => {
+      client.publish(topic, message, options, (error?: Error) => {
         if (error) {
-          obs.error(error);
+          this.internalEvents.next({ type: 'publishError', topic, error });
+          subscriber.error(error);
         } else {
-          obs.next();
-          obs.complete();
+          subscriber.next();
+          subscriber.complete();
         }
       });
     });
   }
 
-  /**
-   * This method publishes a message for a topic with optional options.
-   * If an error occurs, it will throw.
-   */
-  public unsafePublish(topic: string, message: string | Buffer, options: IPublishOptions = {}): void {
-    if (!this.client) {
-      throw new Error('mqtt client not connected');
-    }
-    this.client.publish(topic, message, options, (error: Error | undefined) => {
+  unsafePublish(topic: string, message: MqttPayload, options: IClientPublishOptions = {}): void {
+    this.requireClient().publish(topic, message, options, (error?: Error) => {
       if (error) {
-        throw (error);
+        this.internalEvents.next({ type: 'publishError', topic, error });
+        throw error;
       }
     });
   }
 
-  private _handleOnConnect = (e: IOnConnectEvent) => {
-    if (this.options.connectOnCreate === true) {
-      Object.keys(this.observables).forEach((filterString: string) => {
-        this.client.subscribe(filterString);
-      });
+  private requireClient(): MqttClient {
+    if (!this.client) {
+      throw new Error(NOT_CONNECTED_ERROR);
     }
-    this.state.next(MqttConnectionState.CONNECTED);
-    this._onConnect.emit(e);
+    return this.client;
   }
 
-  private _handleOnReconnect = () => {
-    if (this.options.connectOnCreate === true) {
-      Object.keys(this.observables).forEach((filterString: string) => {
-        this.client.subscribe(filterString);
-      });
-    }
-    this.state.next(MqttConnectionState.CONNECTING);
-    this._onReconnect.emit();
+  private setState(state: MqttConnectionState): void {
+    this._state.next(state);
+    this._connectionState.set(state);
   }
 
-  private _handleOnClose = () => {
-    this.state.next(MqttConnectionState.CLOSED);
-    this._onClose.emit();
-  }
-
-  private _handleOnOffline = () => {
-    this._onOffline.emit();
-  }
-
-  private _handleOnError = (e: IOnErrorEvent) => {
-    this._onError.emit(e);
-    console.error(e);
-  }
-
-  private _handleOnEnd = () => {
-    this._onEnd.emit();
-  }
-
-  private _handleOnMessage = (topic: string, payload: Buffer, packet: Packet) => {
-    this._onMessage.emit(packet);
-    if (packet.cmd === 'publish') {
-      this.messages.next(packet as any);
-    }
-  }
-
-  private _handleOnPacketsend = (e: IOnPacketsendEvent) => {
-    this._onPacketsend.emit(e);
-  }
-
-  private _handleOnPacketreceive = (e: IOnPacketreceiveEvent) => {
-    this._onPacketreceive.emit(e);
-  }
-
-  private _generateClientId() {
-    return 'client-' + Math.random().toString(36).substr(2, 19);
+  private bind(client: MqttClient): void {
+    const when =
+      <A extends unknown[]>(handler: (...args: A) => void) =>
+      (...args: A): void => {
+        if (client === this.client) {
+          handler(...args);
+        }
+      };
+    client.on(
+      'connect',
+      when((packet: IConnackPacket) => {
+        this.setState(MqttConnectionState.CONNECTED);
+        this._onConnect.next(packet);
+      }),
+    );
+    client.on(
+      'reconnect',
+      when(() => {
+        this.setState(MqttConnectionState.CONNECTING);
+        this._onReconnect.next();
+      }),
+    );
+    client.on(
+      'close',
+      when(() => {
+        this.setState(MqttConnectionState.CLOSED);
+        this._onClose.next();
+      }),
+    );
+    client.on(
+      'offline',
+      when(() => this._onOffline.next()),
+    );
+    client.on(
+      'error',
+      when((error: IOnErrorEvent) => this._onError.next(error)),
+    );
+    client.stream?.on?.(
+      'error',
+      when((error: IOnErrorEvent) => this._onError.next(error)),
+    );
+    client.on(
+      'end',
+      when(() => this._onEnd.next()),
+    );
+    client.on(
+      'message',
+      when((_topic: string, _payload: unknown, packet: IPublishPacket) => {
+        this._onMessage.next(packet);
+        this._messages.next(packet as unknown as IMqttMessage);
+      }),
+    );
+    client.on(
+      'packetsend',
+      when((packet: Packet) => this._onPacketsend.next(packet)),
+    );
+    client.on(
+      'packetreceive',
+      when((packet: Packet) => this._onPacketreceive.next(packet)),
+    );
   }
 }

@@ -1,249 +1,173 @@
 import { TestBed } from '@angular/core/testing';
-
-import { skip, map, mergeMap, scan } from 'rxjs/operators';
-import { noop, Subscription, of } from 'rxjs';
-
+import { bufferCount, firstValueFrom, type Observable, toArray } from 'rxjs';
+import { describe, expect, it } from 'vitest';
+import { MqttConnectionState, type MqttServiceOptions } from './mqtt.model';
 import { MqttService } from './mqtt.service';
-import { MqttServiceConfig, MqttClientService } from './mqtt.module';
-import {
-  IMqttMessage,
-  IMqttServiceOptions,
-  IOnConnectEvent,
-  IOnErrorEvent,
-  IOnMessageEvent,
-  IOnSubackEvent,
-  MqttConnectionState
-} from './mqtt.model';
+import { MqttClientService, MqttServiceConfig } from './mqtt.tokens';
+import { FakeMqttClient, flush } from './testing/fake-mqtt-client';
 
-const config: IMqttServiceOptions = {
-  connectOnCreate: true,
-  hostname: 'localhost',
-  port: 9001
-};
-
-const currentUuid = generateUuid();
-let originalTimeout: number;
-let mqttService: MqttService;
-
-beforeEach(() => {
-  originalTimeout = jasmine.DEFAULT_TIMEOUT_INTERVAL;
-  jasmine.DEFAULT_TIMEOUT_INTERVAL = 30000;
-
+function setup(options: MqttServiceOptions = {}, fake = new FakeMqttClient()) {
   TestBed.configureTestingModule({
     providers: [
-      {
-        provide: MqttServiceConfig,
-        useValue: config
-      },
-      {
-        provide: MqttClientService,
-        useValue: undefined
-      }
-    ]
+      { provide: MqttServiceConfig, useValue: { logLevel: 'silent', ...options } },
+      { provide: MqttClientService, useValue: fake.asClient() },
+    ],
   });
-  mqttService = TestBed.inject(MqttService);
-});
-
-afterEach(() => {
-  jasmine.DEFAULT_TIMEOUT_INTERVAL = originalTimeout;
-});
-
-describe('MqttService', () => {
-  it('#constructor', () => {
-    expect(mqttService).toBeDefined();
-  });
-
-
-  it('#connect', (done) => {
-    mqttService.disconnect(true);
-    mqttService.connect({ ...config, clientId: 'connect' + currentUuid });
-    mqttService.state.pipe(skip(2)).subscribe(state => {
-      expect(state).toBe(MqttConnectionState.CONNECTED);
-      expect(mqttService.clientId).toBe('connect' + currentUuid);
-      done();
-    });
-  });
-
-  it('#clientId', () => {
-    expect(mqttService.clientId.startsWith('client-')).toBeTruthy();
-  });
-
-  it('#disconnect', (done) => {
-    mqttService.disconnect(true);
-    mqttService.state.pipe(skip(1)).subscribe(state => {
-      expect(state).toBe(MqttConnectionState.CLOSED);
-      done();
-    });
-  });
-
-  it('#observe', (done) => {
-    mqttService.observe('$SYS/broker/uptime').subscribe((message: IMqttMessage) => {
-      expect(message.payload).toBeDefined();
-      done();
-    });
-  });
-
-  it('#publish', (done) => {
-    mqttService.observe('ngx-mqtt/tests/publish/' + currentUuid).subscribe((message: IMqttMessage) => {
-      expect(message.payload.toString()).toBe('publish');
-      done();
-    });
-    mqttService.publish('ngx-mqtt/tests/publish/' + currentUuid, 'publish').subscribe(noop);
-  });
-
-  it('#unsafePublish', (done) => {
-    mqttService.observe('ngx-mqtt/tests/unsafePublish/' + currentUuid).subscribe((message: IMqttMessage) => {
-      expect(message.payload.toString()).toBe('unsafePublish');
-      done();
-    });
-    mqttService.unsafePublish('ngx-mqtt/tests/unsafePublish/' + currentUuid, 'unsafePublish');
-  });
-
-
-  it('#onClose', (done) => {
-    mqttService.disconnect(true);
-    mqttService.onClose.subscribe(() => {
-      done();
-    });
-  });
-
-  it('#onConnect', (done) => {
-    mqttService.onConnect.subscribe((e: IOnConnectEvent) => {
-      expect(e.cmd).toBe('connack');
-      done();
-    });
-  });
-
-  // it('#onReconnect', (done) => {
-
-  // });
-
-  it('#onMessage', (done) => {
-    mqttService.observe('$SYS/broker/uptime').subscribe(noop);
-    mqttService.onMessage.subscribe((e: IOnMessageEvent) => {
-      expect(e.cmd).toBe('publish');
-      done();
-    });
-  });
-
-  it('#onSuback', (done) => {
-    mqttService.observe('$SYS/broker/uptime').subscribe(noop);
-    mqttService.onSuback.subscribe((e: IOnSubackEvent) => {
-      expect(e.filter).toBe('$SYS/broker/uptime');
-      expect(e.granted).toBeTruthy();
-      done();
-    });
-  });
-
-  it('#onError', (done) => {
-    mqttService.disconnect(true);
-    mqttService.connect({ hostname: 'not_existing' });
-    mqttService.state.pipe(skip(2)).subscribe(state => {
-      expect(state).toBe(MqttConnectionState.CLOSED);
-      mqttService.unsafePublish('onError', 'shouldThrow');
-    });
-    mqttService.onError.subscribe((e: IOnErrorEvent) => {
-      expect(e.type).toBe('error');
-      done();
-    });
-  });
-});
-
-describe('MqttService Retained Behavior', () => {
-  it('emit the retained message for all current and new subscribers', (done) => {
-    let counter = 0;
-    const topic = 'ngx-mqtt/tests/retained/' + currentUuid;
-    const mqttSubscriptions: IMqttSubscription[] = [];
-
-    function observe(): void {
-      const s: IMqttSubscription = {
-        id: counter++,
-        payload: null
-      };
-      s.subscription = mqttService
-        .observeRetained(topic)
-        .pipe(map((v: IMqttMessage) => v.payload))
-        .subscribe(msg => {
-          s.payload = msg;
-        });
-      mqttSubscriptions.push(s);
-    }
-    mqttService.unsafePublish(topic, 'foobar', { retain: true, qos: 0 });
-
-    interface IMqttSubscription {
-      subscription?: Subscription;
-      id: number;
-      payload: any;
-    }
-
-    observe();
-    setTimeout(() => observe(), 100);
-    setTimeout(() => observe(), 200);
-
-    setTimeout(() => {
-      mqttSubscriptions.map((s: IMqttSubscription) => {
-        expect(s.payload).toBeTruthy();
-      });
-      done();
-    }, 3000);
-  });
-
-  it('do not emit not retained message on late subscribe', (done) => {
-    const topic = 'ngx-mqtt/tests/notRetained/' + currentUuid;
-    let lateMessage: IMqttMessage; // this message should never occur
-    mqttService.observe(topic).subscribe((msg1: IMqttMessage) => {
-      expect(msg1).toBeDefined();
-      mqttService.observe(topic).subscribe((msg2: IMqttMessage) => lateMessage = msg2);
-      setTimeout(() => {
-        expect(lateMessage).toBeUndefined();
-        done();
-      }, 1000);
-    });
-    setTimeout(() => {
-      mqttService.unsafePublish(topic, 'foobar');
-    }, 1000);
-  });
-});
-
-describe('MqttService.filterMatchesTopic', () => {
-  it('is defined', () => {
-    expect(MqttService.filterMatchesTopic).toBeDefined();
-  });
-  const matches: any = [
-    ['$', '#', false],
-    ['a', 'a', true],
-    ['a', '#', true],
-    ['a', 'a/#', true],
-    ['a/b', 'a/#', true],
-    ['a/b/c', 'a/#', true],
-    ['b/c/d', 'a/#', false],
-    ['a', 'a/+', false],
-    ['a', '/a', false],
-    ['a/b', 'a/b', true],
-    ['a/b/c', 'a/+/c', true],
-    ['a/b/c', 'a/+/d', false],
-    ['#', '$SYS/#', false],
-    ['a/b', 'a/+', true],
-    ['a/b', 'a/#', true],
-    ['a/b', 'a/b/#', true],
-    ['a/b/c', 'a/b/c', true],
-  ];
-  for (let i = 0; i < matches.length; i++) {
-    it(`${matches[i][0]} matches ${matches[i][1]}: ${matches[i][2]}`, () => {
-      expect(MqttService.filterMatchesTopic(matches[i][1], matches[i][0])).toBe(matches[i][2]);
-    });
-  }
-});
-
-function generateUuid() {
-  let uuid = '', i, random;
-  for (i = 0; i < 32; i++) {
-    random = Math.random() * 16 | 0;
-
-    if (i === 8 || i === 12 || i === 16 || i === 20) {
-      uuid += '-';
-    }
-    uuid += (i === 12 ? 4 : (i === 16 ? (random & 3 | 8) : random)).toString(16);
-  }
-  return uuid;
+  return { service: TestBed.inject(MqttService), fake };
 }
+
+const current = <T>(service: MqttService, pick: (s: MqttService) => Observable<T>) =>
+  firstValueFrom(pick(service));
+
+describe('MqttService connection', () => {
+  it('connects on creation with the injected client', async () => {
+    const { service, fake } = setup();
+    expect(await current(service, (s) => s.state)).toBe(MqttConnectionState.CONNECTING);
+    fake.emit('connect', { cmd: 'connack' });
+    expect(await current(service, (s) => s.state)).toBe(MqttConnectionState.CONNECTED);
+    expect(service.connectionState()).toBe(MqttConnectionState.CONNECTED);
+  });
+
+  it('does not connect when connectOnCreate is false', async () => {
+    const { service } = setup({ connectOnCreate: false });
+    expect(await current(service, (s) => s.state)).toBe(MqttConnectionState.CLOSED);
+    expect(() => service.publish('t', 'm')).toThrowError('mqtt client not connected');
+    expect(() => service.disconnect()).toThrowError('mqtt client not connected');
+  });
+
+  it('tracks reconnect and close', async () => {
+    const { service, fake } = setup();
+    const reconnects = firstValueFrom(service.onReconnect);
+    fake.emit('connect', { cmd: 'connack' });
+    fake.emit('reconnect');
+    await reconnects;
+    expect(service.connectionState()).toBe(MqttConnectionState.CONNECTING);
+    const closes = firstValueFrom(service.onClose);
+    fake.emit('close');
+    await closes;
+    expect(service.connectionState()).toBe(MqttConnectionState.CLOSED);
+  });
+
+  it('forwards lifecycle events', async () => {
+    const { service, fake } = setup();
+    const connack = firstValueFrom(service.onConnect);
+    const offline = firstValueFrom(service.onOffline);
+    const end = firstValueFrom(service.onEnd);
+    const errors = firstValueFrom(service.onError.pipe(bufferCount(2)));
+    const sent = firstValueFrom(service.onPacketsend);
+    const received = firstValueFrom(service.onPacketreceive);
+    fake.emit('connect', { cmd: 'connack', returnCode: 0 });
+    fake.emit('offline');
+    fake.emit('end');
+    fake.emit('error', new Error('client'));
+    fake.stream.emit('error', new Error('stream'));
+    fake.emit('packetsend', { cmd: 'pingreq' });
+    fake.emit('packetreceive', { cmd: 'pingresp' });
+    expect(await connack).toEqual({ cmd: 'connack', returnCode: 0 });
+    await offline;
+    await end;
+    expect((await errors).map((e) => e.message)).toEqual(['client', 'stream']);
+    expect((await sent).cmd).toBe('pingreq');
+    expect((await received).cmd).toBe('pingresp');
+  });
+
+  it('emits incoming publish packets on messages and onMessage', async () => {
+    const { service, fake } = setup();
+    const message = firstValueFrom(service.messages);
+    const packet = firstValueFrom(service.onMessage);
+    fake.deliver('a/b', 'hello');
+    expect(new TextDecoder().decode((await message).payload)).toBe('hello');
+    expect((await packet).cmd).toBe('publish');
+  });
+
+  it('ignores events from a replaced client and ends it', async () => {
+    const { service, fake } = setup();
+    const replacement = new FakeMqttClient();
+    service.connect({}, replacement.asClient());
+    expect(fake.endCalls).toEqual([true]);
+    fake.emit('close');
+    expect(service.connectionState()).toBe(MqttConnectionState.CONNECTING);
+    replacement.emit('connect', { cmd: 'connack' });
+    expect(service.connectionState()).toBe(MqttConnectionState.CONNECTED);
+  });
+
+  it('keeps state, clientId and the previous client when creating a client throws', async () => {
+    const { service, fake } = setup({ clientId: 'kept' });
+    fake.emit('connect', { cmd: 'connack' });
+    expect(() => service.connect({ url: 'localhost', clientId: 'other' })).toThrowError(
+      'Missing protocol',
+    );
+    expect(await current(service, (s) => s.state)).toBe(MqttConnectionState.CONNECTED);
+    expect(service.clientId).toBe('kept');
+    expect(fake.endCalls).toEqual([]);
+    fake.emit('close');
+    expect(service.connectionState()).toBe(MqttConnectionState.CLOSED);
+  });
+
+  it('disconnects with force true by default', () => {
+    const { service, fake } = setup();
+    service.disconnect();
+    service.disconnect(false);
+    expect(fake.endCalls).toEqual([true, false]);
+  });
+
+  it('uses a configured clientId and generates one otherwise', () => {
+    expect(setup({ clientId: 'fixed-id' }).service.clientId).toBe('fixed-id');
+    TestBed.resetTestingModule();
+    expect(setup().service.clientId).toMatch(/^ngx-mqtt-/);
+  });
+
+  it('does not mutate the injected options', () => {
+    const options: MqttServiceOptions = {
+      hostname: 'a',
+      will: { topic: 't', payload: 'p', qos: 0, retain: false },
+    };
+    const snapshot = structuredClone(options);
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: MqttServiceConfig, useValue: options },
+        { provide: MqttClientService, useValue: new FakeMqttClient().asClient() },
+      ],
+    });
+    const service = TestBed.inject(MqttService);
+    service.connect(
+      { hostname: 'b', will: { topic: 'u', payload: 'q', qos: 1, retain: true } },
+      new FakeMqttClient().asClient(),
+    );
+    expect(options).toEqual(snapshot);
+  });
+
+  it('ends the client when the injector is destroyed', () => {
+    const { fake } = setup();
+    TestBed.resetTestingModule();
+    expect(fake.endCalls).toEqual([true]);
+  });
+
+  it('exposes the topic matcher statically', () => {
+    expect(MqttService.filterMatchesTopic('a/+', 'a/b')).toBe(true);
+  });
+});
+
+describe('MqttService publish', () => {
+  it('publishes only when subscribed and completes on success', async () => {
+    const { service, fake } = setup();
+    const result = service.publish('t', 'm', { qos: 1 });
+    expect(fake.publishCalls).toEqual([]);
+    const values = await firstValueFrom(result.pipe(toArray()));
+    expect(values).toEqual([undefined]);
+    expect(fake.publishCalls).toEqual([{ topic: 't', message: 'm', opts: { qos: 1 } }]);
+  });
+
+  it('errors when the client reports a failure', async () => {
+    const { service, fake } = setup();
+    fake.publishError = new Error('nope');
+    await expect(firstValueFrom(service.publish('t', 'm'))).rejects.toThrowError('nope');
+  });
+
+  it('publishes immediately with unsafePublish', async () => {
+    const { service, fake } = setup();
+    service.unsafePublish('t', 'm');
+    expect(fake.publishCalls).toEqual([{ topic: 't', message: 'm', opts: {} }]);
+    await flush();
+  });
+});

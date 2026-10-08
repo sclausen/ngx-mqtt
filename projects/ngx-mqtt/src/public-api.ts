@@ -1,7 +1,5 @@
-/*
- * Public API Surface of ngx-mqtt
- */
-
 export * from './lib/mqtt.model';
-export * from './lib/mqtt.service';
-export * from './lib/mqtt.module';
+export { MqttService } from './lib/mqtt.service';
+export { MqttModule, provideMqtt } from './lib/mqtt.providers';
+export { MqttClientService, MqttServiceConfig } from './lib/mqtt.tokens';
+export { filterMatchesTopic } from './lib/topic-filter';

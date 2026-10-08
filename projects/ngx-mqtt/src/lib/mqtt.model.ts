@@ -1,56 +1,64 @@
-import { Stream } from 'stream';
-import { MqttClient, IClientOptions, IClientPublishOptions, IPacket } from 'mqtt-browser';
+import type {
+  IClientOptions,
+  IClientPublishOptions,
+  IConnackPacket,
+  IPublishPacket,
+  MqttClient,
+  Packet,
+} from 'mqtt';
+
+export type { IClientPublishOptions, IClientSubscribeOptions, Packet } from 'mqtt';
 
 export enum MqttConnectionState {
   CLOSED,
   CONNECTING,
-  CONNECTED
+  CONNECTED,
 }
 
-export interface IMqttServiceOptions extends IClientOptions {
-  /**
-   * whether a new connection should be created
-   * on creating an instance of the service
-   */
+export type MqttLogLevel = 'debug' | 'info' | 'warn' | 'error' | 'silent';
+
+export interface MqttLogEntry {
+  level: Exclude<MqttLogLevel, 'silent'>;
+  message: string;
+  event: string;
+  clientId: string;
+  timestamp: string;
+  context?: { filter?: string; topic?: string; cmd?: string; reasonCode?: number };
+}
+
+export type MqttLogger = (entry: MqttLogEntry) => void;
+
+export interface MqttServiceOptions extends IClientOptions {
   connectOnCreate?: boolean;
-  /** the hostname of the mqtt broker */
   hostname?: string;
-  /** the port to connect with websocket to the broker */
   port?: number;
-  /** the path parameters to connect to e.g. `/mqtt` */
   path?: string;
   protocol?: 'wss' | 'ws';
-  /** if the url is provided, hostname, port path and protocol are ignored */
   url?: string;
+  logLevel?: MqttLogLevel;
+  logger?: MqttLogger;
 }
 
-export interface IMqttMessage extends IPacket {
-  /** the mqtt topic to which this message was published to */
-  topic: string;
-  /** the payload */
+/** @deprecated Use MqttServiceOptions. */
+export type IMqttServiceOptions = MqttServiceOptions;
+
+export type MqttPayload = Parameters<MqttClient['publish']>[1];
+
+export interface IMqttMessage extends Omit<IPublishPacket, 'payload'> {
   payload: Uint8Array;
-  /** the quality of service */
-  qos: number;
-  /** if this message is a retained message */
-  retain: boolean;
-  /** if this message is a duplicate */
-  dup: boolean;
 }
 
-export interface IPublishOptions extends IClientPublishOptions { }
-export interface IOnConnectEvent extends IMqttMessage { }
+export type IPublishOptions = IClientPublishOptions;
+export type IOnConnectEvent = IConnackPacket;
 export interface IOnErrorEvent extends Error {
   type?: string;
+  code?: number;
 }
-export interface IOnMessageEvent extends IMqttMessage { }
+export type IOnMessageEvent = IMqttMessage;
 export interface IOnSubackEvent {
   granted: boolean;
   filter: string;
 }
-
-export interface IMqttClient extends MqttClient {
-  stream: Stream;
-}
-
-export interface IOnPacketsendEvent extends IPacket { }
-export interface IOnPacketreceiveEvent extends IPacket { }
+export type IOnPacketsendEvent = Packet;
+export type IOnPacketreceiveEvent = Packet;
+export type IMqttClient = MqttClient;
